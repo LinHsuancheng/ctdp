@@ -1,0 +1,59 @@
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+.mini {
+  height: 100%;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  gap: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.mini.focusing {
+  border-color: var(--accent);
+}
+
+.mini-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mini-actions {
+  -webkit-app-region: no-drag;
+  display: flex;
+  gap: 2px;
+}
+
+.mini-actions button {
+  padding: 0 6px;
+  background: none;
+  color: var(--muted);
+  line-height: 18px;
+}
+
+.mini-time {
+  font-size: 30px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  align-self: center;
+}
+
+.mini-caption {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

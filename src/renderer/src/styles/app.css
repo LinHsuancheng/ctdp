@@ -1,0 +1,303 @@
+.loading {
+  padding: 40px;
+  color: var(--muted);
+}
+
+.app {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 20px 32px;
+}
+
+.chains {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.chain {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+}
+
+.chain-label,
+.chain-best {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.chain-value {
+  font-size: 34px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 18px 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  background: none;
+  border-radius: 8px 8px 0 0;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.badge {
+  margin-left: 6px;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.page {
+  display: grid;
+  gap: 12px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.card.accent {
+  border-color: var(--accent);
+}
+
+.card h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.hint strong {
+  color: var(--text);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field > span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  border-color: var(--border);
+  padding: 6px 12px;
+}
+
+.chip.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.chip-input {
+  width: 80px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.secondary {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.ghost {
+  background: none;
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+.ghost.danger {
+  color: var(--danger);
+  background: none;
+}
+
+.small {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.countdown {
+  font-size: 40px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown.big {
+  font-size: 64px;
+  text-align: center;
+}
+
+.focus-meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.focus-task {
+  text-align: center;
+  font-size: 20px !important;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.45);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.dialog {
+  width: min(520px, 100%);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.dialog h2 {
+  margin: 0;
+}
+
+.notice {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.notice.ok {
+  color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+
+.notice.inline {
+  padding: 4px 10px;
+}
+
+.related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tag {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+
+.list-main {
+  flex: 1;
+}
+
+.list-meta {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ok);
+  flex: none;
+}
+
+.entry.main .dot {
+  background: var(--danger);
+}
+
+.entry.reserve .dot {
+  background: var(--muted);
+}
+
+.empty {
+  color: var(--muted);
+  margin: 0;
+}
+
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.check input {
+  width: auto;
+}
