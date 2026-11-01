@@ -1,8 +1,8 @@
-import type { CtdpState, Precedent } from "./types";
+import { deepestVirtual } from "./tree";
+import type { Chain, CtdpState, Precedent, RunNode } from "./types";
 
 const normalize = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
 
-/** The precedent that already allows exactly this behavior, if any. */
 export function findPrecedent(precedents: Precedent[], behavior: string): Precedent | undefined {
   const key = normalize(behavior);
   return key ? precedents.find((p) => normalize(p.behavior) === key) : undefined;
@@ -18,34 +18,32 @@ export function relatedPrecedents(precedents: Precedent[], behavior: string): Pr
   });
 }
 
-export function phaseLabel(state: CtdpState): string {
-  switch (state.phase.kind) {
-    case "idle":
-      return "空闲";
-    case "reserved":
-      return "已预约";
-    case "focusing":
-      return "专注中";
+export const chainOf = (state: CtdpState, id: string | null | undefined): Chain | undefined =>
+  id ? state.chains.find((c) => c.id === id) : undefined;
+
+export const primaryChain = (state: CtdpState) => chainOf(state, state.primaryChainId);
+
+/** Primary first, then by creation. */
+export function orderedChains(state: CtdpState): Chain[] {
+  return [...state.chains].sort(
+    (a, b) => Number(b.id === state.primaryChainId) - Number(a.id === state.primaryChainId) || a.createdAt - b.createdAt,
+  );
+}
+
+export const openComposite = (chain: Chain): RunNode | null => (chain.main.open ? deepestVirtual(chain.main.open) : null);
+
+/** Milliseconds until the seated unit may be kept (negative once past it). */
+export function untilMinimum(state: CtdpState, now: number): number | null {
+  const { seat } = state;
+  return seat ? seat.node.startedAt + seat.node.spec.minMinutes * 60_000 - now : null;
+}
+
+/** Ids of every node on the path from `root` to `id`, inclusive. */
+export function pathTo(root: RunNode, id: string): RunNode[] {
+  if (root.id === id) return [root];
+  for (const child of root.children) {
+    const path = pathTo(child, id);
+    if (path.length) return [root, ...path];
   }
-}
-
-/** Milliseconds until the current phase's deadline, or null when idle. */
-export function remainingMs(state: CtdpState, now: number): number | null {
-  const { phase } = state;
-  if (phase.kind === "reserved") return phase.deadline - now;
-  if (phase.kind === "focusing") return phase.endsAt - now;
-  return null;
-}
-
-/** Fraction of the current phase already elapsed, 0..1. */
-export function progress(state: CtdpState, now: number): number {
-  const { phase } = state;
-  const [start, end] =
-    phase.kind === "reserved"
-      ? [phase.reservedAt, phase.deadline]
-      : phase.kind === "focusing"
-        ? [phase.startedAt, phase.endsAt]
-        : [0, 0];
-  if (end <= start) return 0;
-  return Math.min(1, Math.max(0, (now - start) / (end - start)));
+  return [];
 }

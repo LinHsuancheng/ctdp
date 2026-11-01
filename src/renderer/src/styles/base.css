@@ -10,7 +10,7 @@
   --danger: #d63c3c;
   --ok: #1f8a4c;
   --radius: 10px;
-  font-family: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 14px;
 }
 
@@ -83,4 +83,14 @@ button:focus-visible {
   height: 100%;
   background: var(--accent);
   transition: width 0.4s linear;
+}
+
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  width: 100%;
 }

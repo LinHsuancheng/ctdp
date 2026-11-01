@@ -1,7 +1,7 @@
 import { globalShortcut } from "electron";
 import type { Settings } from "../shared/ctdp";
 
-/** Global hotkeys: the reserve hotkey is the “signal”, the start hotkey is sitting down. */
+/** Global hotkeys on the primary chain: reserve is the signal, start is sitting down. */
 export class Shortcuts {
   private applied = "";
 

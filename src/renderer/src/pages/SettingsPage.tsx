@@ -1,71 +1,83 @@
 import { useState } from "react";
-import type { Settings } from "../../../shared/ctdp";
+import { levelMark, type CtdpState, type Settings } from "../../../shared/ctdp";
 import { dispatch } from "../hooks/useCtdp";
 
-export function SettingsPage({ settings }: { settings: Settings }) {
-  const [draft, setDraft] = useState(settings);
+function Categories({ state }: { state: CtdpState }) {
+  const [name, setName] = useState("");
+  const add = () => void dispatch({ type: "saveCategory", categoryId: null, name }).then(() => setName(""));
+  return (
+    <section className="card">
+      <h2>Categories</h2>
+      <ul className="list">
+        {state.categories.map((c) => (
+          <li key={c.id}>
+            <input
+              className="grow"
+              defaultValue={c.name}
+              onBlur={(e) => e.target.value !== c.name && void dispatch({ type: "saveCategory", categoryId: c.id, name: e.target.value })}
+            />
+            <button className="ghost small danger" onClick={() => void dispatch({ type: "deleteCategory", categoryId: c.id })}>
+              Delete
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="row">
+        <input className="grow" value={name} placeholder="New category" onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+        <button className="secondary small" disabled={!name.trim()} onClick={add}>
+          Add
+        </button>
+      </div>
+    </section>
+  );
+}
+
+export function SettingsPage({ state }: { state: CtdpState }) {
+  const [draft, setDraft] = useState<Settings>(state.settings);
   const [saved, setSaved] = useState(false);
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) => {
     setDraft((d) => ({ ...d, [key]: value }));
     setSaved(false);
   };
-  const save = async () => {
-    await dispatch({ type: "updateSettings", patch: draft });
-    setSaved(true);
-  };
 
   return (
-    <section className="card">
-      <h2>设置</h2>
-      <label className="field">
-        <span>神圣座位的触发动作</span>
-        <input value={draft.seatTrigger} onChange={(e) => set("seatTrigger", e.target.value)} />
-      </label>
-      <label className="field">
-        <span>预约信号</span>
-        <input value={draft.reserveSignal} onChange={(e) => set("reserveSignal", e.target.value)} />
-      </label>
-      <div className="grid2">
+    <>
+      <section className="card">
+        <h2>Settings</h2>
+        <div className="grid2">
+          <label className="field">
+            <span>Reserve shortcut (primary chain)</span>
+            <input value={draft.reserveShortcut} onChange={(e) => set("reserveShortcut", e.target.value)} />
+          </label>
+          <label className="field">
+            <span>Sit-down shortcut (primary chain)</span>
+            <input value={draft.startShortcut} onChange={(e) => set("startShortcut", e.target.value)} />
+          </label>
+        </div>
+        <p className="hint">Format like CommandOrControl+Alt+R. A shortcut taken by another app will not work.</p>
         <label className="field">
-          <span>预约后落座时限（分钟）</span>
-          <input
-            type="number"
-            min={1}
-            max={120}
-            value={draft.reserveWindowMin}
-            onChange={(e) => set("reserveWindowMin", Number(e.target.value))}
-          />
+          <span>Chunk the sit-down shortcut starts</span>
+          <select value={draft.quickStartChunkId ?? ""} onChange={(e) => set("quickStartChunkId", e.target.value || null)}>
+            <option value="">Ad-hoc 60-minute unit</option>
+            {state.chunks.map((c) => (
+              <option key={c.id} value={c.id}>
+                {levelMark(c.level)} {c.name}
+              </option>
+            ))}
+          </select>
         </label>
-        <label className="field">
-          <span>默认专注时长（分钟）</span>
-          <input
-            type="number"
-            min={1}
-            max={600}
-            value={draft.defaultSessionMin}
-            onChange={(e) => set("defaultSessionMin", Number(e.target.value))}
-          />
+        <label className="check">
+          <input type="checkbox" checked={draft.showMiniWindow} onChange={(e) => set("showMiniWindow", e.target.checked)} />
+          Show the always-on-top mini window while seated or reserved
         </label>
-        <label className="field">
-          <span>预约快捷键</span>
-          <input value={draft.reserveShortcut} onChange={(e) => set("reserveShortcut", e.target.value)} />
-        </label>
-        <label className="field">
-          <span>落座快捷键</span>
-          <input value={draft.startShortcut} onChange={(e) => set("startShortcut", e.target.value)} />
-        </label>
-      </div>
-      <p className="hint">快捷键格式如 CommandOrControl+Alt+R；被其他程序占用时不会生效。</p>
-      <label className="check">
-        <input type="checkbox" checked={draft.showMiniWindow} onChange={(e) => set("showMiniWindow", e.target.checked)} />
-        预约和专注时显示置顶悬浮窗
-      </label>
-      <div className="row">
-        <button className="primary" onClick={() => void save()}>
-          保存
-        </button>
-        {saved && <span className="notice ok inline">已保存</span>}
-      </div>
-    </section>
+        <div className="row">
+          <button className="primary" onClick={() => void dispatch({ type: "updateSettings", patch: draft }).then(() => setSaved(true))}>
+            Save
+          </button>
+          {saved && <span className="notice ok inline">Saved</span>}
+        </div>
+      </section>
+      <Categories state={state} />
+    </>
   );
 }

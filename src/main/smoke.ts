@@ -36,23 +36,27 @@ function check(cond: boolean, msg: string): void {
 
 export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine: Engine): Promise<void> {
   try {
-    await textOf(main, "主链");
-    engine.dispatch({ type: "reserve" });
-    await textOf(main, "已预约");
-    engine.dispatch({ type: "start", task: "冒烟测试", minutes: 1 });
-    await textOf(main, "冒烟测试");
-    check(mini.isVisible(), "mini window should be visible while focusing");
-    const miniText = await textOf(mini, "专注中");
+    const chainId = engine.get().primaryChainId!;
+    await textOf(main, "Desk");
+    engine.dispatch({ type: "reserve", chainId });
+    await textOf(main, "Reserved");
+    engine.dispatch({ type: "seat", chainId, chunkId: "chunk-block", task: "Smoke test", minutes: 0, categoryId: null });
+    await textOf(main, "Smoke test");
+    check(mini.isVisible(), "mini window should be visible while seated");
+    const miniText = await textOf(mini, "Seated");
+    const mainText = await textOf(main, "Three-hour block");
 
-    engine.dispatch({ type: "violation", behavior: "看一眼手机", verdict: "allow" });
-    check(engine.get().precedents.length === 1, "precedent not recorded");
-    engine.dispatch({ type: "abandon" });
-    check(engine.get().mainChain === 0 && engine.get().breaks.length === 1, "abandon did not break chain");
-    check(engine.get().reserveChain === 1, "reservation should have been kept");
+    engine.dispatch({ type: "violation", behavior: "Get water", verdict: "allow" });
+    const chain = () => engine.get().chains.find((c) => c.id === chainId)!;
+    check(chain().main.precedents.length === 1, "precedent not recorded");
+    check(chain().auxiliary.counter.current === 1, "reservation should have been kept");
+    engine.dispatch({ type: "abandonUnit" });
+    check(engine.get().successionPending, "losing the primary chain should ask for a successor");
+    await textOf(main, "Primary chain lost");
     await delay(300);
     check(!mini.isVisible(), "mini window should hide when idle");
 
-    console.log(`SMOKE OK\n--- mini ---\n${miniText}\n--- main ---\n${await textOf(main, "主链")}`);
+    console.log(`SMOKE OK\n--- mini ---\n${miniText}\n--- main (seated) ---\n${mainText}`);
     app.exit(0);
   } catch (err) {
     console.error("SMOKE FAIL:", err);

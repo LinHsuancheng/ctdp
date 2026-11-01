@@ -1,53 +1,64 @@
 import { useState } from "react";
-import type { CtdpState } from "../../../shared/ctdp";
+import { LEVEL_NAMES, levelMark, type Chain, type CtdpState } from "../../../shared/ctdp";
 import { dispatch } from "../hooks/useCtdp";
 
-const PRESETS = [15, 25, 45, 60, 90];
+const ADHOC = "";
 
-export function StartForm({ state }: { state: CtdpState }) {
-  const { settings } = state;
+export function StartForm({ state, chain }: { state: CtdpState; chain: Chain }) {
+  const [chunkId, setChunkId] = useState(state.settings.quickStartChunkId ?? ADHOC);
   const [task, setTask] = useState("");
-  const [minutes, setMinutes] = useState(settings.defaultSessionMin);
+  const [minutes, setMinutes] = useState(60);
+  const [categoryId, setCategoryId] = useState<string | null>(state.categories[0]?.id ?? null);
+  const chunk = state.chunks.find((c) => c.id === chunkId);
+  const isPrimary = chain.id === state.primaryChainId;
 
-  const start = () => void dispatch({ type: "start", task, minutes });
+  const sit = () =>
+    void dispatch({ type: "seat", chainId: chain.id, chunkId: chunk ? chunk.id : null, task, minutes, categoryId });
 
   return (
     <section className="card">
-      <h2>落座</h2>
+      <h2>Sit down</h2>
       <p className="hint">
-        触发动作：<strong>{settings.seatTrigger}</strong>。落座后这一节必须以最好的状态完成，完成后主链变为 #
-        {state.mainChain + 1}。
+        Trigger: <strong>{chain.trigger}</strong>. Once seated, a virtual node is added; give it your best until you keep it.
       </p>
       <label className="field">
-        <span>这一节做什么</span>
-        <input
-          value={task}
-          placeholder="例如：写第三章"
-          maxLength={80}
-          onChange={(e) => setTask(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && start()}
-        />
-      </label>
-      <div className="field">
-        <span>时长（分钟）</span>
-        <div className="chips">
-          {PRESETS.map((m) => (
-            <button key={m} className={m === minutes ? "chip active" : "chip"} onClick={() => setMinutes(m)}>
-              {m}
-            </button>
+        <span>Chunk</span>
+        <select value={chunkId} onChange={(e) => setChunkId(e.target.value)}>
+          <option value={ADHOC}>Ad-hoc unit</option>
+          {state.chunks.map((c) => (
+            <option key={c.id} value={c.id}>
+              {levelMark(c.level)} {c.name} · {LEVEL_NAMES[c.level]}
+              {c.level === 1 ? ` · min ${c.minMinutes} min` : ` · ${c.children.length} parts`}
+            </option>
           ))}
-          <input
-            className="chip-input"
-            type="number"
-            min={1}
-            max={600}
-            value={minutes}
-            onChange={(e) => setMinutes(Number(e.target.value))}
-          />
+        </select>
+      </label>
+      <label className="field">
+        <span>What is this for?</span>
+        <input value={task} maxLength={80} placeholder="e.g. Chapter 3 draft" onChange={(e) => setTask(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sit()} />
+      </label>
+      {!chunk && (
+        <div className="grid2">
+          <label className="field">
+            <span>Minimum minutes</span>
+            <input type="number" min={1} max={600} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} />
+          </label>
+          <label className="field">
+            <span>Category</span>
+            <select value={categoryId ?? ""} onChange={(e) => setCategoryId(e.target.value || null)}>
+              <option value="">None</option>
+              {state.categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
-      </div>
-      <button className="primary" onClick={start}>
-        落座开始 · 快捷键 {settings.startShortcut}
+      )}
+      <button className="primary" onClick={sit}>
+        Sit down
+        {isPrimary && <span className="kbd">{state.settings.startShortcut}</span>}
       </button>
     </section>
   );

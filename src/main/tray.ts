@@ -1,47 +1,46 @@
 import { Menu, Tray, nativeImage } from "electron";
-import { phaseLabel, type CtdpState } from "../shared/ctdp";
-import type { Engine } from "./engine";
+import { primaryChain, type CtdpState } from "../shared/ctdp";
 import { trayIconPath } from "./paths";
 
 interface TrayActions {
   showMain(): void;
+  reserve(): void;
   quickStart(): void;
   quit(): void;
+}
+
+function status(state: CtdpState): string {
+  const chain = primaryChain(state);
+  if (!chain) return state.successionPending ? "Primary chain lost — pick a new one" : "No primary chain";
+  const activity = state.seat ? "Seated" : state.reservation ? "Reserved" : "Idle";
+  return `${activity} · ${chain.name} #${chain.main.counters[0].current} · aux #${chain.auxiliary.counter.current}`;
 }
 
 export class TrayController {
   private readonly tray: Tray;
 
   constructor(
-    private readonly engine: Engine,
+    state: CtdpState,
     private readonly actions: TrayActions,
   ) {
     this.tray = new Tray(nativeImage.createFromPath(trayIconPath()));
     this.tray.on("click", () => actions.showMain());
-    this.update(engine.get());
+    this.update(state);
   }
 
   update(state: CtdpState): void {
-    const status = `${phaseLabel(state)} · 主链 #${state.mainChain} · 预约链 #${state.reserveChain}`;
-    const { phase, settings } = state;
-    this.tray.setToolTip(`CTDP\n${status}`);
+    const line = status(state);
+    const hasPrimary = Boolean(primaryChain(state));
+    this.tray.setToolTip(`CTDP\n${line}`);
     this.tray.setContextMenu(
       Menu.buildFromTemplate([
-        { label: status, enabled: false },
+        { label: line, enabled: false },
         { type: "separator" },
-        {
-          label: `预约（${settings.reserveWindowMin} 分钟内落座）`,
-          enabled: phase.kind === "idle",
-          click: () => this.engine.dispatch({ type: "reserve" }),
-        },
-        {
-          label: `落座开始（${settings.defaultSessionMin} 分钟）`,
-          enabled: phase.kind !== "focusing",
-          click: () => this.actions.quickStart(),
-        },
+        { label: "Reserve (primary chain)", enabled: hasPrimary && !state.reservation, click: this.actions.reserve },
+        { label: "Sit down (primary chain)", enabled: hasPrimary && !state.seat, click: this.actions.quickStart },
         { type: "separator" },
-        { label: "打开主窗口", click: () => this.actions.showMain() },
-        { label: "退出", click: () => this.actions.quit() },
+        { label: "Open CTDP", click: this.actions.showMain },
+        { label: "Quit", click: this.actions.quit },
       ]),
     );
   }

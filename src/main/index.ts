@@ -49,14 +49,29 @@ function boot(): void {
       mainWin = win;
       return win;
     };
-    const quickStart = () =>
-      engine.dispatch({ type: "start", task: "", minutes: engine.get().settings.defaultSessionMin });
+    // Both shortcuts act on the primary chain; without one, open the window to pick.
+    const withPrimary = (fn: (chainId: string) => void) => () => {
+      const id = engine.get().primaryChainId;
+      if (id && !engine.get().successionPending) fn(id);
+      else openMain();
+    };
+    const reserve = withPrimary((chainId) => engine.dispatch({ type: "reserve", chainId }));
+    const quickStart = withPrimary((chainId) =>
+      engine.dispatch({
+        type: "seat",
+        chainId,
+        chunkId: engine.get().settings.quickStartChunkId,
+        task: "",
+        minutes: 60,
+        categoryId: null,
+      }),
+    );
 
     const miniWin = createMiniWindow();
     const mini = new MiniController(miniWin);
     const notifier = new Notifier();
-    const tray = new TrayController(engine, { showMain: openMain, quickStart, quit: () => app.quit() });
-    const shortcuts = new Shortcuts({ reserve: () => engine.dispatch({ type: "reserve" }), start: quickStart });
+    const tray = new TrayController(engine.get(), { showMain: openMain, reserve, quickStart, quit: () => app.quit() });
+    const shortcuts = new Shortcuts({ reserve, start: quickStart });
 
     registerIpc(engine, { openMain, hideMini: () => mini.dismiss() });
     engine.on("state", (state) => {
@@ -64,7 +79,7 @@ function boot(): void {
       mini.sync(state);
       shortcuts.apply(state.settings);
     });
-    engine.on("event", (event) => notifier.onEvent(event));
+    engine.on("event", (event, state) => notifier.onEvent(event, state));
     engine.on("tick", (state, now) => notifier.onTick(state, now));
 
     shortcuts.apply(engine.get().settings);

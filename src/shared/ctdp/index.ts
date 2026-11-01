@@ -2,6 +2,8 @@ export * from "./types";
 export * from "./time";
 export * from "./defaults";
 export * from "./migrate";
+export * from "./tree";
 export * from "./selectors";
+export * from "./context";
 export * from "./reducer";
 export * from "./guards";

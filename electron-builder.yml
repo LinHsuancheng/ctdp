@@ -19,3 +19,5 @@ win:
   icon: resources/icon.png
   # Editing the exe needs wine on Linux; skip it so we can build on hina.
   signAndEditExecutable: false
+electronDownload:
+  mirror: https://npmmirror.com/mirrors/electron/

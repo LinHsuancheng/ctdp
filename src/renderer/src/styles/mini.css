@@ -17,7 +17,7 @@ body,
   user-select: none;
 }
 
-.mini.focusing {
+.mini.seated {
   border-color: var(--accent);
 }
 

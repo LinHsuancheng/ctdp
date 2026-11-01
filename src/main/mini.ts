@@ -1,10 +1,10 @@
 import type { BrowserWindow } from "electron";
-import type { CtdpState, Phase } from "../shared/ctdp";
+import type { CtdpState } from "../shared/ctdp";
 
-const phaseKey = (p: Phase) =>
-  p.kind === "reserved" ? `r${p.reservedAt}` : p.kind === "focusing" ? `f${p.startedAt}` : "idle";
+const activityKey = (s: CtdpState) =>
+  s.seat ? `s${s.seat.node.id}` : s.reservation ? `r${s.reservation.reservedAt}` : "idle";
 
-/** Shows the mini window for each reservation/session unless the user dismissed that one. */
+/** Shows the mini window while seated or reserved, unless the user dismissed that one. */
 export class MiniController {
   private dismissed: string | null = null;
   private current = "idle";
@@ -12,8 +12,8 @@ export class MiniController {
   constructor(private readonly win: BrowserWindow) {}
 
   sync(state: CtdpState): void {
-    this.current = phaseKey(state.phase);
-    const want = state.settings.showMiniWindow && state.phase.kind !== "idle" && this.dismissed !== this.current;
+    this.current = activityKey(state);
+    const want = state.settings.showMiniWindow && this.current !== "idle" && this.dismissed !== this.current;
     if (want && !this.win.isVisible()) this.win.showInactive();
     else if (!want && this.win.isVisible()) this.win.hide();
   }
