@@ -11,11 +11,12 @@ export function setPrimary(state: CtdpState, chainId: string, ctx: Context): Res
   return { state: pushHistory(next, { kind: "primary", chainId }, ctx), events: [] };
 }
 
-export function saveChain(state: CtdpState, chainId: string | null, input: ChainInput, ctx: Context): Result {
+/** Creates or edits a chain. A new chain with `primary` takes over when succession is open. */
+export function saveChain(state: CtdpState, chainId: string | null, input: ChainInput, ctx: Context, primary = false): Result {
   if (chainId === null) {
     const chain = newChain(ctx.id(), input, ctx.now);
     const next = { ...state, chains: [...state.chains, chain] };
-    return state.primaryChainId ? { state: next, events: [] } : setPrimary(next, chain.id, ctx);
+    return !state.primaryChainId || primary ? setPrimary(next, chain.id, ctx) : { state: next, events: [] };
   }
   if (!chainOf(state, chainId)) return unchanged(state);
   const next = updateChain(state, chainId, (c) => ({

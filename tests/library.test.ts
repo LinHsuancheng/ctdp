@@ -18,6 +18,33 @@ describe("primary chain and succession", () => {
     expect(after.successionPending).toBe(false);
   });
 
+  it("lets the only chain restart as primary after it is lost", () => {
+    const { state } = run([
+      [T0, seatFocus()],
+      [T0 + MIN, { type: "abandonUnit" }],
+      [T0 + MIN, { type: "setPrimary", chainId: DESK }],
+    ]);
+    expect(state.primaryChainId).toBe(DESK);
+    expect(state.successionPending).toBe(false);
+  });
+
+  it("creates a new chain as the successor", () => {
+    const { state } = run([
+      [T0, seatFocus()],
+      [T0 + MIN, { type: "abandonUnit" }],
+      [T0 + MIN, { type: "saveChain", chainId: null, input: chainInput, primary: true }],
+    ]);
+    expect(state.chains).toHaveLength(2);
+    expect(state.primaryChainId).toBe("id3");
+    expect(state.successionPending).toBe(false);
+  });
+
+  it("only creates the chain when asked to make it primary while the primary is intact", () => {
+    const { state } = run([[T0, { type: "saveChain", chainId: null, input: chainInput, primary: true }]]);
+    expect(state.chains).toHaveLength(2);
+    expect(state.primaryChainId).toBe(DESK);
+  });
+
   it("does not let the primary change while it is intact", () => {
     const { state } = run([
       [T0, { type: "saveChain", chainId: null, input: chainInput }],
@@ -53,6 +80,7 @@ describe("persistence and IPC", () => {
   it("validates actions", () => {
     expect(isAction({ type: "reserve", chainId: DESK })).toBe(true);
     expect(isAction({ type: "seat", chainId: DESK })).toBe(false);
+    expect(isAction({ type: "saveChain", chainId: null, input: chainInput, primary: "yes" })).toBe(false);
     expect(isAction({ type: "judgeReservation", verdict: "maybe", situation: "" })).toBe(false);
     expect(isAction({ type: "drop tables" })).toBe(false);
   });

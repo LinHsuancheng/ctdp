@@ -28,7 +28,7 @@ export function isAction(v: unknown): v is Action {
     case "settleChunk":
       return str(v.chainId) && typeof v.keep === "boolean";
     case "saveChain":
-      return optStr(v.chainId) && isObject(v.input);
+      return optStr(v.chainId) && isObject(v.input) && (v.primary === undefined || typeof v.primary === "boolean");
     case "saveChunk":
       return optStr(v.chunkId) && isObject(v.input) && Array.isArray(v.input.children);
     case "deleteChunk":

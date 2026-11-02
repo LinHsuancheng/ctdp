@@ -177,7 +177,7 @@ export type Action =
   | { type: "violation"; behavior: string; verdict: Verdict }
   | { type: "settleChunk"; chainId: string; keep: boolean }
   | { type: "setPrimary"; chainId: string }
-  | { type: "saveChain"; chainId: string | null; input: ChainInput }
+  | { type: "saveChain"; chainId: string | null; input: ChainInput; primary?: boolean }
   | { type: "deleteChain"; chainId: string }
   | { type: "saveChunk"; chunkId: string | null; input: ChunkInput }
   | { type: "deleteChunk"; chunkId: string }

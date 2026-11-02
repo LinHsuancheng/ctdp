@@ -38,7 +38,7 @@ export function reduce(state: CtdpState, action: Action, ctx: Context): Result {
     case "setPrimary":
       return setPrimary(state, action.chainId, ctx);
     case "saveChain":
-      return saveChain(state, action.chainId, action.input, ctx);
+      return saveChain(state, action.chainId, action.input, ctx, action.primary === true);
     case "deleteChain":
       return deleteChain(state, action.chainId);
     case "saveChunk":

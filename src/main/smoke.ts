@@ -55,6 +55,11 @@ export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine:
     await textOf(main, "Primary chain lost");
     await delay(300);
     check(!mini.isVisible(), "mini window should hide when idle");
+    await textOf(main, "just lost, restarts from #1");
+    engine.dispatch({ type: "saveChain", chainId: null, input: { name: "Fresh", trigger: "Open the notebook", signal: "Clap", windowMin: 15 }, primary: true });
+    const fresh = engine.get().chains.find((c) => c.name === "Fresh");
+    check(fresh !== undefined && engine.get().primaryChainId === fresh.id, "a new chain should take over as primary");
+    check(!engine.get().successionPending, "succession should close after a new primary is chosen");
 
     console.log(`SMOKE OK\n--- mini ---\n${miniText}\n--- main (seated) ---\n${mainText}`);
     app.exit(0);
