@@ -278,6 +278,21 @@ export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine:
     }, "the recorded shortcut to be checked");
     await shot(main, "settings");
 
+    // An agent's JSON adds chunks by name; the box shows what changes before applying.
+    await js(main, `[...document.querySelectorAll(".tabs button")].find((b) => b.textContent === "Chunks")?.click()`);
+    await textOf(main, "Add with JSON");
+    await js(main, `document.querySelector(".json-box").open = true`);
+    await typeInto(
+      main,
+      ".json-text",
+      JSON.stringify({ categories: ["Writing"], chunks: [{ name: "Draft", minutes: 45, category: "Writing" }, { name: "Writing block", children: ["Draft", "Draft"] }] }),
+    );
+    await textOf(main, "Add chunk Writing block");
+    await shot(main, "json");
+    check(await clickButton(main, "Apply 3 changes"), "the JSON box should offer to apply 3 changes");
+    await until(async () => engine.get().chunks.some((c) => c.name === "Writing block" && c.children.length === 2), "the JSON chunks");
+    await js(main, `[...document.querySelectorAll(".tabs button")].find((b) => b.textContent === "Settings")?.click()`);
+
     // Sync with the real server started by scripts/smoke.sh.
     const url = process.env.CTDP_SMOKE_SYNC_URL;
     const token = process.env.CTDP_SMOKE_SYNC_TOKEN;

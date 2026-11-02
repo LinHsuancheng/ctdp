@@ -222,3 +222,33 @@ button.danger:not(.ghost) {
     transform: translateY(6px);
   }
 }
+
+/* JSON box */
+.json-text {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  white-space: pre;
+}
+.json-errors,
+.json-changes {
+  margin: 0;
+  padding: 10px 14px 10px 30px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+}
+.json-errors {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.json-changes {
+  background: var(--ok-soft);
+}
+.json-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 18px;
+}

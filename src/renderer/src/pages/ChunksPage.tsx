@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { LEVEL_NAMES, LEVELS, levelMark, type Chunk, type ChunkInput, type CtdpState, type Level } from "../../../shared/ctdp";
+import { applyLibrary, EXAMPLE_LIBRARY, LEVEL_NAMES, LEVELS, levelMark, libraryDoc, planLibrary, type Chunk, type ChunkInput, type CtdpState, type Level } from "../../../shared/ctdp";
+import { JsonBox } from "../components/JsonBox";
 import { dispatch } from "../hooks/useCtdp";
 
 const blank: ChunkInput = { name: "", level: 1, categoryId: null, minMinutes: 60, freeAbandon: false, children: [], minChildren: 1 };
@@ -144,8 +145,24 @@ export function ChunksPage({ state }: { state: CtdpState }) {
     void dispatch({ type: "saveChunk", chunkId, input }).then(() => setEditing(null));
   const used = (c: Chunk) => state.chunks.some((p) => p.children.includes(c.id));
 
+  const preview = (text: string) => {
+    const plan = planLibrary(state, text);
+    return {
+      errors: plan.errors,
+      changes: [...plan.newCategories.map((c) => `Add category ${c}`), ...plan.chunks.map((c) => `${c.update ? "Update" : "Add"} chunk ${c.name}`)],
+    };
+  };
+
   return (
     <>
+      <JsonBox
+        title="Add with JSON"
+        hint="Paste categories and chunks as JSON — an agent can write it. Chunks refer to categories and to each other by name; a name that already exists is updated. Chains cannot be changed this way."
+        example={EXAMPLE_LIBRARY}
+        current={() => libraryDoc(state)}
+        preview={preview}
+        apply={(text) => applyLibrary(planLibrary(state, text), dispatch, () => window.ctdp.getState())}
+      />
       <section className="card">
         <h2>Chunks</h2>
         <p className="hint">
