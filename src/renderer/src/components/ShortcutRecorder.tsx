@@ -80,6 +80,8 @@ export function ShortcutRecorder({ value }: { value: string }) {
   const onKeyDown = (e: KeyboardEvent) => {
     if (!recording) return;
     e.preventDefault();
+    // The keys being recorded are not shortcuts for the page.
+    e.stopPropagation();
     if (e.key === "Escape") return setRecording(false);
     const accelerator = acceleratorOf(e);
     if (accelerator) void save(accelerator);

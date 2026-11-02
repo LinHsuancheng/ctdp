@@ -2,7 +2,9 @@ import { useState } from "react";
 import { findPrecedent, type Chain, type Seat } from "../../../shared/ctdp";
 import { ConfirmDialog } from "../components/kit/ConfirmDialog";
 import { HoldButton } from "../components/kit/HoldButton";
+import { Key } from "../components/Key";
 import { Modal } from "../components/Modal";
+import { useKeys } from "../hooks/useKeys";
 import { dispatch } from "../hooks/useCtdp";
 
 /** Text recorded for a self-reported violation: violations need no explanation. */
@@ -36,6 +38,8 @@ export function SignDialog({ chain, seat, onSigned, onClose }: Props) {
     if (!exact) await dispatch({ type: "violation", behavior: text, verdict: "allow" });
     await sign();
   };
+  const asking = mode === "ask" && !breaking;
+  useKeys({ s: asking && (() => void sign()), a: asking && (() => setMode("allow")) }, { inDialog: true });
 
   if (breaking) {
     return (
@@ -70,10 +74,10 @@ export function SignDialog({ chain, seat, onSigned, onClose }: Props) {
           <p className="sign-question">Did anything else happen?</p>
           <div className="sign-actions">
             <button className="primary" autoFocus onClick={() => void sign()}>
-              Nothing else — sign
+              Nothing else — sign <Key k="S" />
             </button>
             <button className="secondary" onClick={() => setMode("allow")}>
-              Something to allow forever…
+              Something to allow forever… <Key k="A" />
             </button>
           </div>
         </>
@@ -81,15 +85,26 @@ export function SignDialog({ chain, seat, onSigned, onClose }: Props) {
         <>
           <label className="field">
             <span>What happened? From now on it is allowed on this chain, forever.</span>
-            <textarea autoFocus rows={2} maxLength={120} value={text} placeholder="e.g. answered the door" onChange={(e) => setText(e.target.value)} />
+            <textarea autoFocus rows={2} maxLength={120} value={text} placeholder="e.g. answered the door" onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (text.trim()) void allowAndSign();
+                } else if (e.key === "Escape") {
+                  // Back to the question, not out of the dialog.
+                  e.stopPropagation();
+                  setMode("ask");
+                }
+              }}
+            />
           </label>
           {exact && <p className="notice ok">Already allowed by “{exact.behavior}”.</p>}
           <div className="sign-actions">
             <button className="primary" disabled={!text.trim()} onClick={() => void allowAndSign()}>
-              {exact ? "Sign" : "Allow forever and sign"}
+              {exact ? "Sign" : "Allow forever and sign"} <Key k="Enter" />
             </button>
             <button className="ghost" onClick={() => setMode("ask")}>
-              Back
+              Back <Key k="Esc" />
             </button>
           </div>
         </>
@@ -99,7 +114,7 @@ export function SignDialog({ chain, seat, onSigned, onClose }: Props) {
         Signing says this sitting stayed within what is allowed above. Anything that goes unrecorded takes the meaning out of the whole chain.
       </p>
       <div className="sign-break">
-        <HoldButton label="It was a violation — break chain" onHeld={() => setBreaking(true)} />
+        <HoldButton label="It was a violation — break chain" hotkey="b" inDialog onHeld={() => setBreaking(true)} />
       </div>
     </Modal>
   );

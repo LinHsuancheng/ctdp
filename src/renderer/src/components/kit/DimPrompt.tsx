@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Key } from "../Key";
 
 interface Props {
   kicker: string;
@@ -24,10 +25,10 @@ export function DimPrompt({ kicker, text, sub, doneLabel, onDone, onCancel }: Pr
         {sub && <p className="dim-sub">{sub}</p>}
         <div className="dim-actions">
           <button className="ghost" onClick={onCancel}>
-            Cancel
+            Cancel <Key k="Esc" />
           </button>
           <button className="primary" autoFocus onClick={onDone}>
-            {doneLabel}
+            {doneLabel} <Key k="Enter" />
           </button>
         </div>
       </div>

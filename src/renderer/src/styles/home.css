@@ -326,3 +326,37 @@ button.big {
     font-size: 56px;
   }
 }
+
+/* Keyboard hints */
+kbd.key {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  font-weight: normal;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+  background: var(--surface);
+  vertical-align: 1px;
+}
+
+button.primary kbd.key,
+.launch-btn.action kbd.key {
+  border-color: rgb(255 255 255 / 35%);
+  color: inherit;
+  background: transparent;
+  opacity: 0.85;
+}
+
+/* Touch screens have no keyboard to hint at. */
+@media (hover: none) {
+  kbd.key {
+    display: none;
+  }
+}

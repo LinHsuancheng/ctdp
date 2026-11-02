@@ -55,7 +55,7 @@ export function Home({ state, onMore }: { state: CtdpState; onMore: (tab?: strin
       <section className="hero empty-hero">
         <span className="hero-label">Welcome</span>
         <p className="hero-text">Create a chain first: its sacred seat, and the signal for reservations.</p>
-        <button className="primary big" onClick={() => onMore("chains")}>
+        <button className="primary big" autoFocus onClick={() => onMore("chains")}>
           Create a chain
         </button>
       </section>

@@ -1,4 +1,7 @@
+import { useRef, type KeyboardEvent } from "react";
 import { LEVEL_NAMES, levelMark, orderedChains, type CtdpState } from "../../../shared/ctdp";
+import { Key } from "../components/Key";
+import { useKeys } from "../hooks/useKeys";
 
 export interface StartChoice {
   chainId: string;
@@ -8,20 +11,35 @@ export interface StartChoice {
   task: string;
 }
 
-/** Everything Action could change, folded away: by default it repeats the last sitting on the primary chain. */
+/**
+ * What Action will start, open by default: it repeats the last sitting on the
+ * primary chain. C, K and T jump to the chain, the chunk and the task; arrows
+ * change a list, Esc steps back out so the single-key shortcuts work again.
+ */
 export function StartOptions({ state, value, onChange }: { state: CtdpState; value: StartChoice; onChange: (v: StartChoice) => void }) {
   const set = <K extends keyof StartChoice>(key: K, v: StartChoice[K]) => onChange({ ...value, [key]: v });
   const chunk = state.chunks.find((c) => c.id === value.chunkId);
   const chains = orderedChains(state);
+  const box = useRef<HTMLDetailsElement>(null);
+  const focus = (name: string) => () => {
+    if (box.current) box.current.open = true;
+    box.current?.querySelector<HTMLElement>(`[name="${name}"]`)?.focus();
+  };
+  useKeys({ c: chains.length > 1 && focus("chain"), k: focus("chunk"), t: focus("task") });
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && e.target !== box.current) (e.target as HTMLElement).blur();
+  };
   return (
-    <details className="disclosure">
+    <details className="disclosure" open ref={box} onKeyDown={onKey}>
       <summary>Options</summary>
       <div className="disclosure-body">
         <div className="grid2">
           {chains.length > 1 && (
             <label className="field">
-              <span>Chain</span>
-              <select value={value.chainId} onChange={(e) => set("chainId", e.target.value)}>
+              <span>
+                Chain <Key k="C" />
+              </span>
+              <select name="chain" value={value.chainId} onChange={(e) => set("chainId", e.target.value)}>
                 {chains.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -32,8 +50,10 @@ export function StartOptions({ state, value, onChange }: { state: CtdpState; val
             </label>
           )}
           <label className="field">
-            <span>Chunk</span>
-            <select value={value.chunkId ?? ""} onChange={(e) => set("chunkId", e.target.value || null)}>
+            <span>
+              Chunk <Key k="K" />
+            </span>
+            <select name="chunk" value={value.chunkId ?? ""} onChange={(e) => set("chunkId", e.target.value || null)}>
               <option value="">Ad-hoc unit</option>
               {state.chunks.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -64,8 +84,10 @@ export function StartOptions({ state, value, onChange }: { state: CtdpState; val
           )}
         </div>
         <label className="field">
-          <span>What is it for? (optional)</span>
-          <input value={value.task} maxLength={80} placeholder="e.g. Chapter 3 draft" onChange={(e) => set("task", e.target.value)} />
+          <span>
+            What is it for? (optional) <Key k="T" />
+          </span>
+          <input name="task" value={value.task} maxLength={80} placeholder="e.g. Chapter 3 draft" onChange={(e) => set("task", e.target.value)} />
         </label>
       </div>
     </details>

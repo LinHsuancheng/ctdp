@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { findPrecedent, relatedPrecedents, type Precedent, type Verdict } from "../../../shared/ctdp";
+import { Key } from "./Key";
 import { Modal } from "./Modal";
 
 interface Props {
@@ -21,7 +22,15 @@ export function PrecedentDialog({ title, intro, placeholder, precedents, breakLa
   return (
     <Modal title={title} onClose={onClose ?? (() => {})}>
       <p className="hint">{intro}</p>
-      <textarea autoFocus rows={2} maxLength={120} value={text} placeholder={placeholder} onChange={(e) => setText(e.target.value)} />
+      <textarea autoFocus rows={2} maxLength={120} value={text} placeholder={placeholder} onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          // Enter allows; breaking stays a deliberate Tab and Enter on its button.
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (text.trim()) onJudge("allow", text);
+          }
+        }}
+      />
       {exact && <p className="notice ok">Already allowed by precedent “{exact.behavior}”. Carry on.</p>}
       {related.length > 0 && (
         <div className="related">
@@ -38,7 +47,7 @@ export function PrecedentDialog({ title, intro, placeholder, precedents, breakLa
           {breakLabel}
         </button>
         <button className="secondary" disabled={!text.trim()} onClick={() => onJudge("allow", text)}>
-          {exact ? "Apply precedent" : "Allow forever"}
+          {exact ? "Apply precedent" : "Allow forever"} <Key k="Enter" />
         </button>
         {onClose && (
           <button className="ghost" onClick={onClose}>

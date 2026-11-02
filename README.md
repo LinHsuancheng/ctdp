@@ -21,6 +21,23 @@ The app lives in the tray and stays out of the way:
 - Anything that breaks a chain needs a 2-second hold and then a confirmation dialog.
 - **More** holds Chains, Chunks, Precedents, History and Settings. On Chunks, **Add with JSON** takes categories and chunks as JSON (for example written by an agent), previews every change, and applies it; chains cannot be changed that way. **Copy current as JSON** exports the library in the same format.
 
+## Keyboard
+
+Daily use works without the mouse; buttons show their key. `Shift+Alt+Z` (or the recorded shortcut) brings the window up.
+
+| Where | Keys |
+|-------|------|
+| Home | `R` reserve, `A` action, `G` give up a reservation |
+| Options (open by default) | `C` chain, `K` chunk, `T` task; arrows change a list, `Tab` next field, `Esc` steps out |
+| Dimmed prompt | `Enter` done, `Esc` cancel |
+| Sitting | `F` finish once the minimum is reached; hold `B` for 2 s to break the chain (`B` abandons a free unit) |
+| Between units | `A` next unit, `K` keep the chunk, hold `B` to drop it |
+| Sign | `S` (or `Enter`) sign, `A` something to allow forever (`Enter` signs, `Esc` back), hold `B` for a violation |
+| Dialogs | `Esc` cancels; Cancel has focus, `Tab` then `Enter` confirms |
+| More | `M` opens it, `1`–`5` pick a tab, `Esc` back home |
+
+Single-key shortcuts are off while typing in a field or while another dialog is open.
+
 ## Data
 
 Shared data lives in `ctdp-state.json` in Electron's userData folder. It holds a snapshot plus the **action log**: every action that changed something, with its device and time. The state shown is always the replay of that log, which is what lets several devices share one history (see `src/shared/ctdp/log.ts`). Next to it, `ctdp-device.json` holds this device's id and preferences (summon shortcut, corner card, the last sitting's settings, notifications); it is never shared.

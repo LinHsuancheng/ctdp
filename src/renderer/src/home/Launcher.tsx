@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { formatDuration, type Chain, type CtdpState } from "../../../shared/ctdp";
 import { ConfirmDialog } from "../components/kit/ConfirmDialog";
+import { Key } from "../components/Key";
 import { dispatch } from "../hooks/useCtdp";
+import { useKeys } from "../hooks/useKeys";
 import { StartOptions, type StartChoice } from "./StartOptions";
 
 interface Props {
@@ -20,12 +22,13 @@ function actionSub(state: CtdpState, choice: StartChoice): string {
   return chunk.level === 1 ? `${chunk.name} · ${chunk.minMinutes} min` : `${chunk.name} · ${chunk.children.length} parts`;
 }
 
-/** Idle: the chain at a glance, then two buttons. Everything else is folded into Options. */
+/** Idle: the chain at a glance, two buttons, and below them what Action will start. */
 export function Launcher({ state, chain, now, choice, onChoice, onReserve, onAction }: Props) {
   const [givingUp, setGivingUp] = useState(false);
   const r = state.reservation;
   const reservedHere = r && !r.expired && r.chainId === chain.id;
   const main = chain.main.counters[0];
+  useKeys({ r: !r && onReserve, a: onAction, g: Boolean(reservedHere) && (() => setGivingUp(true)) });
 
   return (
     <>
@@ -45,17 +48,21 @@ export function Launcher({ state, chain, now, choice, onChoice, onReserve, onAct
               Reserved — sit down in time for auxiliary #{chain.auxiliary.counter.current + 1}
             </span>
             <button className="ghost small" onClick={() => setGivingUp(true)}>
-              Give up
+              Give up <Key k="G" />
             </button>
           </div>
         ) : (
           <button className="launch-btn reserve" disabled={Boolean(r)} onClick={onReserve}>
-            <span className="launch-name">Reserve</span>
+            <span className="launch-name">
+              Reserve <Key k="R" />
+            </span>
             <span className="launch-sub">{r ? "Another reservation is running" : `${chain.auxiliary.signal} · ${chain.auxiliary.windowMin} min`}</span>
           </button>
         )}
         <button className="launch-btn action" onClick={onAction}>
-          <span className="launch-name">Action</span>
+          <span className="launch-name">
+            Action <Key k="A" />
+          </span>
           <span className="launch-sub">{actionSub(state, choice)}</span>
         </button>
       </div>

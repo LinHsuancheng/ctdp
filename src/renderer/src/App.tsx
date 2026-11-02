@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { Key } from "./components/Key";
 import { VoidedBanner } from "./components/VoidedBanner";
 import { Home } from "./home/Home";
 import { SettingsContext, useCtdpState, useDeviceSettings, useSync } from "./hooks/useCtdp";
+import { useKeys } from "./hooks/useKeys";
 import { ChainsPage } from "./pages/ChainsPage";
 import { ChunksPage } from "./pages/ChunksPage";
 import { HistoryPage } from "./pages/HistoryPage";
@@ -26,6 +28,13 @@ export function App() {
   const settings = useDeviceSettings();
   const sync = useSync();
   const [view, setView] = useState<View>("home");
+  const onHome = view === "home";
+  // M opens More from home; inside More, Esc goes back and 1–5 pick a tab.
+  useKeys({
+    m: onHome && (() => setView("chains")),
+    Escape: !onHome && (() => setView("home")),
+    ...Object.fromEntries(MORE.map((t, i) => [String(i + 1), !onHome && (() => setView(t.key))])),
+  });
   if (!state || !settings || !sync) return <div className="loading">Loading…</div>;
 
   return (
@@ -36,18 +45,18 @@ export function App() {
             <>
               <span className="brand">CTDP</span>
               <button className="ghost small" onClick={() => setView("chains")}>
-                More
+                More <Key k="M" />
               </button>
             </>
           ) : (
             <>
               <button className="ghost small back" onClick={() => setView("home")}>
-                ‹ Back
+                ‹ Back <Key k="Esc" />
               </button>
               <nav className="tabs" role="tablist">
                 {MORE.map((t) => (
                   <button key={t.key} role="tab" aria-selected={view === t.key} className={view === t.key ? "tab active" : "tab"} onClick={() => setView(t.key)}>
-                    {t.label}
+                    {t.label} <Key k={String(MORE.indexOf(t) + 1)} />
                   </button>
                 ))}
               </nav>

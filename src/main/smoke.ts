@@ -43,7 +43,12 @@ function check(cond: boolean, msg: string): void {
   if (!cond) throw new Error(msg);
 }
 
-const js = <T>(win: BrowserWindow, code: string): Promise<T> => win.webContents.executeJavaScript(code);
+/** Runs code in a page; a page that stops answering fails the check instead of hanging it. */
+const js = <T>(win: BrowserWindow, code: string): Promise<T> =>
+  Promise.race([
+    win.webContents.executeJavaScript(code) as Promise<T>,
+    delay(10_000).then(() => Promise.reject(new Error(`page did not answer: ${code.slice(0, 120)}`))),
+  ]);
 const clickButton = (win: BrowserWindow, label: string) =>
   js<boolean>(win, `(() => { const b = [...document.querySelectorAll("button")].find((b) => b.textContent.startsWith(${JSON.stringify(label)}) && !b.disabled); b?.click(); return !!b; })()`);
 /** Presses and holds a hold-to-confirm button long enough to fire it. */
@@ -73,6 +78,21 @@ const typeInto = (win: BrowserWindow, selector: string, value: string) =>
       el.dispatchEvent(new Event("input", { bubbles: true }));
     })()`,
   );
+
+/** Real key events through Chromium, as the keyboard sends them. */
+function keyDown(win: BrowserWindow, keyCode: string): void {
+  win.webContents.focus();
+  win.webContents.sendInputEvent({ type: "keyDown", keyCode });
+  if (keyCode.length === 1) win.webContents.sendInputEvent({ type: "char", keyCode });
+}
+const keyUp = (win: BrowserWindow, keyCode: string) => win.webContents.sendInputEvent({ type: "keyUp", keyCode });
+async function press(win: BrowserWindow, keyCode: string): Promise<void> {
+  keyDown(win, keyCode);
+  keyUp(win, keyCode);
+  await delay(150);
+}
+const focusedName = (win: BrowserWindow) => js<string | null>(win, `document.activeElement?.getAttribute("name") ?? null`);
+const overlayOpen = (win: BrowserWindow) => js<boolean>(win, `!!document.querySelector(".overlay, .dim")`);
 
 async function until(cond: () => Promise<boolean>, what: string, timeoutMs = 8000): Promise<void> {
   const end = Date.now() + timeoutMs;
@@ -151,7 +171,7 @@ async function phoneSmoke(url: string, token: string, engine: Engine, sync: Sync
   }, "the desktop's action to reach the phone");
 
   check(await clickButton(phone, "More"), "the phone should offer More");
-  const openTab = (name: string) => js(phone, `[...document.querySelectorAll(".tabs button")].find((b) => b.textContent === ${JSON.stringify(name)})?.click()`);
+  const openTab = (name: string) => js(phone, `[...document.querySelectorAll(".tabs button")].find((b) => b.textContent.startsWith(${JSON.stringify(name)}))?.click()`);
   for (const tab of ["Chains", "Chunks", "Precedents", "History"]) {
     await openTab(tab);
     await delay(200);
@@ -214,6 +234,30 @@ export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine:
     check(chain().main.counters[0].current === 1, "signing keeps the node");
     await textOf(main, "#1 signed");
 
+    // Without the mouse: Options are open, K and T jump into them, Esc steps out;
+    // R and A open the dimmed prompts and Esc cancels them.
+    // Signing hides the window; bring it back as the summon shortcut would.
+    await until(async () => !main.isVisible(), "the window to hide after signing");
+    main.show();
+    check(await js<boolean>(main, `document.querySelector("details.disclosure").open`), "Options should be open by default");
+    await press(main, "k");
+    check((await focusedName(main)) === "chunk", "K should focus the chunk list");
+    await press(main, "Escape");
+    check((await focusedName(main)) === null, "Esc should step out of the chunk list");
+    await press(main, "t");
+    check((await focusedName(main)) === "task", "T should focus the task");
+    await press(main, "Escape");
+    await press(main, "r");
+    await textOf(main, "Snap fingers once");
+    await press(main, "Escape");
+    await until(async () => !(await overlayOpen(main)), "Esc to close the reserve prompt");
+    check(engine.get().reservation === null, "Esc must not reserve");
+    await press(main, "a");
+    await textOf(main, "Put on headphones and sit at the desk");
+    await press(main, "Escape");
+    await until(async () => !(await overlayOpen(main)), "Esc to close the action prompt");
+    check(engine.get().seat === null, "Esc must not sit down");
+
     // Reserve: the dimmed prompt shows the signal, then the countdown starts.
     check(await clickButton(main, "Reserve"), "home should offer Reserve");
     await textOf(main, "Snap fingers once");
@@ -236,6 +280,22 @@ export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine:
     const miniText = await textOf(mini, "Hold to leave");
     const mainText = await textOf(main, "Hold to break chain");
     await shot(mini, "mini-seated");
+
+    // Holding B breaks the chain like holding the button: a short press does nothing,
+    // two seconds open the confirmation, and Esc backs out of it.
+    keyDown(main, "b");
+    await delay(400);
+    keyUp(main, "b");
+    await delay(2000);
+    check(!(await overlayOpen(main)), "a short press of B must not start breaking the chain");
+    keyDown(main, "b");
+    await delay(2300);
+    keyUp(main, "b");
+    await textOf(main, "Break the chain?");
+    await press(main, "Escape");
+    await until(async () => !(await overlayOpen(main)), "Esc to close the confirmation");
+    check(engine.get().seat !== null, "Esc must keep the sitting");
+    await shot(main, "keys");
 
     // Leaving from the corner card asks for confirmation in the main window.
     await hold(mini, "Hold to leave");
@@ -265,7 +325,7 @@ export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine:
     check(engine.settings().notifications === false && engine.settings().summonShortcut === DEFAULT_SUMMON, "version-2 settings should move to this device");
     check(existsSync(join(app.getPath("userData"), "ctdp-state.json.v2-backup")), "the version-2 file should be backed up");
     check(await clickButton(main, "More"), "home should offer More");
-    await js(main, `[...document.querySelectorAll(".tabs button")].find((b) => b.textContent === "Settings")?.click()`);
+    await js(main, `[...document.querySelectorAll(".tabs button")].find((b) => b.textContent.startsWith("Settings"))?.click()`);
     await textOf(main, "ctdp-state.json");
     const settingsText = await textOf(main, "Shortcut to bring up CTDP");
     check(/Works|another app|valid/.test(settingsText), "the shortcut status should show");
@@ -279,7 +339,7 @@ export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine:
     await shot(main, "settings");
 
     // An agent's JSON adds chunks by name; the box shows what changes before applying.
-    await js(main, `[...document.querySelectorAll(".tabs button")].find((b) => b.textContent === "Chunks")?.click()`);
+    await js(main, `[...document.querySelectorAll(".tabs button")].find((b) => b.textContent.startsWith("Chunks"))?.click()`);
     await textOf(main, "Add with JSON");
     await js(main, `document.querySelector(".json-box").open = true`);
     await typeInto(
@@ -291,7 +351,7 @@ export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine:
     await shot(main, "json");
     check(await clickButton(main, "Apply 3 changes"), "the JSON box should offer to apply 3 changes");
     await until(async () => engine.get().chunks.some((c) => c.name === "Writing block" && c.children.length === 2), "the JSON chunks");
-    await js(main, `[...document.querySelectorAll(".tabs button")].find((b) => b.textContent === "Settings")?.click()`);
+    await js(main, `[...document.querySelectorAll(".tabs button")].find((b) => b.textContent.startsWith("Settings"))?.click()`);
 
     // Sync with the real server started by scripts/smoke.sh.
     const url = process.env.CTDP_SMOKE_SYNC_URL;
