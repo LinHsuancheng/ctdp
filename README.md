@@ -9,9 +9,21 @@ A Windows desktop tool for edmond's Chained Time-Delay Protocol: sacred seat, pr
 - Starting a chunk adds **virtual nodes** at every level. A unit may be kept after its minimum; a composite after enough parts are kept. Not keeping a node, leaving early, or a violation judged as a break loses the whole main track.
 - The **auxiliary track** follows the original answer: signal, then sit within the window; a miss is judged by the precedent rule.
 
+## Daily use
+
+The app lives in the tray and stays out of the way:
+
+- **Shift+Alt+Z** (recordable in Settings) brings the window up; pressing it again while the window is in front puts it away.
+- The window shows the chain's length and two buttons: **Reserve** and **Action**. Everything else (chain, chunk, minutes, task) is folded into **Options**; Action repeats the last sitting's settings on the primary chain.
+- Either button first dims the window and shows the one requirement (the reserve signal, or the sacred seat); **Done** starts the countdown or the sitting.
+- While reserved or seated the window steps aside for a **corner card** with the time and the next step (Action, Finish).
+- **Finish** opens the signature: the chain's precedents are listed, then *Nothing else — sign*, *Something to allow forever…* (recorded as a precedent, then signed), or *It was a violation* (breaks the chain, no reason asked).
+- Anything that breaks a chain needs a 2-second hold and then a confirmation dialog.
+- **More** holds Chains, Chunks, Precedents, History and Settings. On Chunks, **Add with JSON** takes categories and chunks as JSON (for example written by an agent), previews every change, and applies it; chains cannot be changed that way. **Copy current as JSON** exports the library in the same format.
+
 ## Data
 
-Shared data lives in `ctdp-state.json` in Electron's userData folder. It holds a snapshot plus the **action log**: every action that changed something, with its device and time. The state shown is always the replay of that log, which is what lets several devices share one history (see `src/shared/ctdp/log.ts`). Next to it, `ctdp-device.json` holds this device's id and preferences (shortcuts, mini window, quick-start chunk, notifications); it is never shared.
+Shared data lives in `ctdp-state.json` in Electron's userData folder. It holds a snapshot plus the **action log**: every action that changed something, with its device and time. The state shown is always the replay of that log, which is what lets several devices share one history (see `src/shared/ctdp/log.ts`). Next to it, `ctdp-device.json` holds this device's id and preferences (summon shortcut, corner card, the last sitting's settings, notifications); it is never shared.
 
 | OS | Path |
 |----|------|
@@ -33,12 +45,13 @@ To move to another computer: export on the old one and import on the new one, or
 ## Layout
 
 ```
-src/shared/ctdp/   pure domain: types, reducer (mainTrack, auxiliary, library), tree helpers, action log
+src/shared/ctdp/   pure domain: types, reducer (mainTrack, auxiliary, library), tree helpers, action log, library JSON
 src/shared/runtime/ engine (timer + state), sync client, device record; shared by Electron and the web app
 src/main/          Electron main: store, windows, tray, shortcuts, notifier, smoke check
 src/web/           phone web app: in-page host of window.ctdp (IndexedDB, push), PWA manifest and service worker
 src/preload/       contextBridge API (window.ctdp)
-src/renderer/      React UI: main window pages and the always-on-top mini window
+src/renderer/      React UI: home/ (Reserve, Action, sitting, signature), pages/ behind More, the corner card (MiniApp),
+                   components/kit/ (hold button, confirm dialog, dimmed prompt), styles/base.css + kit.css (design tokens)
 server/            sync server (own package.json): API, SQLite store, reminders, deployment notes
 tests/             vitest unit tests for the domain
 ```
