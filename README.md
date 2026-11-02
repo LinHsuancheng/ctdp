@@ -22,6 +22,10 @@ Settings → Data shows the exact path and offers **Show in folder**, **Export�
 
 To move to another computer: export on the old one and import on the new one, or quit CTDP (tray → Quit) and copy `ctdp-state.json` into the same folder on the new computer. Do not copy `ctdp-device.json`: two devices with the same id would collide once syncing exists. A version-2 file from before the action log is upgraded on start (kept as `ctdp-state.json.v2-backup`), and its settings move to the device file.
 
+## Sync server
+
+`server/` is a small Node service (built-in SQLite, Web Push) that stores the shared action log for all devices and sends reminders to phones. Devices connect from Settings → Sync with the server address and token. Deployment: [server/DEPLOY.md](server/DEPLOY.md).
+
 ## Layout
 
 ```
@@ -29,6 +33,7 @@ src/shared/ctdp/   pure domain: types, reducer (mainTrack, auxiliary, library), 
 src/main/          Electron main: engine (timer + state), store, windows, tray, shortcuts, notifier, smoke check
 src/preload/       contextBridge API (window.ctdp)
 src/renderer/      React UI: main window pages and the always-on-top mini window
+server/            sync server (own package.json): API, SQLite store, reminders, deployment notes
 tests/             vitest unit tests for the domain
 ```
 
@@ -38,6 +43,6 @@ tests/             vitest unit tests for the domain
 npm install          # Electron binary comes from the mirror in .npmrc
 npm test             # domain unit tests
 npm run typecheck
-npm run smoke        # builds, then drives the real app headless under Xvfb
+npm run smoke        # builds app and server, starts the server, drives the real app headless under Xvfb
 npm run dist:win     # release/CTDP-<version>-win.zip (unzip and run CTDP.exe)
 ```

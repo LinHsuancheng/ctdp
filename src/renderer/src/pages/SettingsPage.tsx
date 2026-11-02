@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { levelMark, type CtdpState, type DeviceSettings } from "../../../shared/ctdp";
-import type { DataResult } from "../../../shared/ipc";
+import type { DataResult, SyncView } from "../../../shared/ipc";
+import { SyncSection } from "../components/SyncSection";
 import { dispatch, useSettings } from "../hooks/useCtdp";
 
 function Categories({ state }: { state: CtdpState }) {
@@ -66,7 +67,7 @@ function DataSection() {
   );
 }
 
-export function SettingsPage({ state }: { state: CtdpState }) {
+export function SettingsPage({ state, sync }: { state: CtdpState; sync: SyncView }) {
   const [draft, setDraft] = useState<DeviceSettings>(useSettings());
   const [saved, setSaved] = useState(false);
   const set = <K extends keyof DeviceSettings>(key: K, value: DeviceSettings[K]) => {
@@ -116,6 +117,7 @@ export function SettingsPage({ state }: { state: CtdpState }) {
           {saved && <span className="notice ok inline">Saved</span>}
         </div>
       </section>
+      <SyncSection view={sync} />
       <Categories state={state} />
       <DataSection />
     </>

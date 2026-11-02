@@ -7,6 +7,7 @@ import { Notifier } from "./notifier";
 import { Shortcuts } from "./shortcuts";
 import { isSmoke, prepareSmoke, runSmoke } from "./smoke";
 import { loadData, loadDevice, saveData, saveDevice } from "./store";
+import { setupSync } from "./syncIpc";
 import { TrayController } from "./tray";
 import { createMainWindow, createMiniWindow } from "./windows";
 
@@ -32,7 +33,8 @@ function boot(): void {
 
   app.whenReady().then(() => {
     const { data, legacySettings } = loadData();
-    const engine = new Engine(data, loadDevice(legacySettings), { data: (d) => saveData(d), device: saveDevice });
+    const device = loadDevice(legacySettings);
+    const engine = new Engine(data, device, { data: (d) => saveData(d), device: saveDevice });
 
     const openMain = (): BrowserWindow => {
       if (mainWin && !mainWin.isDestroyed()) {
@@ -82,6 +84,7 @@ function boot(): void {
 
     registerIpc(engine, { openMain, hideMini: () => mini.dismiss() });
     registerDataIpc(engine);
+    const sync = setupSync(engine, device);
     engine.on("state", (state) => {
       tray.update(state);
       mini.sync(state, engine.settings());
@@ -101,10 +104,11 @@ function boot(): void {
     app.on("second-instance", () => openMain());
     app.on("will-quit", () => {
       engine.stop();
+      sync.stop();
       shortcuts.dispose();
       tray.destroy();
     });
 
-    if (smoke) void runSmoke(win, miniWin, engine);
+    if (smoke) void runSmoke(win, miniWin, engine, sync);
   });
 }

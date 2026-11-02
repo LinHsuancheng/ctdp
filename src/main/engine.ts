@@ -2,6 +2,7 @@ import { EventEmitter } from "node:events";
 import {
   applyEntry,
   entryId,
+  mergeLogs,
   replay,
   sanitizeDeviceSettings,
   tickAt,
@@ -10,6 +11,7 @@ import {
   type CtdpState,
   type DeviceSettings,
   type DomainEvent,
+  type LogEntry,
   type Result,
 } from "../shared/ctdp";
 import type { Device } from "./store";
@@ -21,6 +23,10 @@ interface EngineEvents {
   event: [DomainEvent, CtdpState];
   /** Fires every second, changed or not. */
   tick: [CtdpState, number];
+  /** A local action was added to the log. */
+  appended: [LogEntry];
+  /** Entries overruled when logs were merged. */
+  voided: [LogEntry[]];
 }
 
 export interface Persist {
@@ -36,6 +42,7 @@ export interface Persist {
 export class Engine extends EventEmitter<EngineEvents> {
   private timer: NodeJS.Timeout | null = null;
   private state: CtdpState;
+  private overruled: LogEntry[];
 
   constructor(
     private data: CtdpData,
@@ -43,7 +50,9 @@ export class Engine extends EventEmitter<EngineEvents> {
     private readonly persist: Persist,
   ) {
     super();
-    this.state = replay(data.base, data.log).state;
+    const replayed = replay(data.base, data.log);
+    this.state = replayed.state;
+    this.overruled = replayed.voided;
     // Never reuse a sequence number, even if the device file fell behind.
     const own = data.log.filter((e) => e.device === device.id).map((e) => e.seq);
     device.seq = Math.max(device.seq, ...own);
@@ -55,6 +64,14 @@ export class Engine extends EventEmitter<EngineEvents> {
 
   getData(): CtdpData {
     return this.data;
+  }
+
+  deviceId(): string {
+    return this.device.id;
+  }
+
+  voided(): LogEntry[] {
+    return this.overruled;
   }
 
   settings(): DeviceSettings {
@@ -73,15 +90,40 @@ export class Engine extends EventEmitter<EngineEvents> {
       this.persist.device(this.device);
       this.persist.data(this.data);
     }
-    return this.apply(r);
+    const events = this.apply(r);
+    if (r.effective) this.emit("appended", entry);
+    return events;
   }
 
-  /** Swaps in a whole data set, e.g. from an import. */
+  /** Swaps in a whole data set, e.g. from an import or another device. */
   replace(data: CtdpData): void {
     this.data = data;
     this.persist.data(data);
-    this.state = tickAt(replay(data.base, data.log).state, Date.now()).state;
+    this.recompute();
+  }
+
+  /** Adds entries from other devices and replays. Returns whether anything was new. */
+  merge(entries: LogEntry[]): boolean {
+    const log = mergeLogs(this.data.log, entries);
+    if (log.length === this.data.log.length) return false;
+    this.data = { ...this.data, log };
+    this.persist.data(this.data);
+    this.recompute();
+    return true;
+  }
+
+  /**
+   * Replays the whole log. Time catches up silently: the events of a
+   * replay were already announced, or happened on another device.
+   */
+  private recompute(): void {
+    const { state, voided } = replay(this.data.base, this.data.log);
+    this.state = tickAt(state, Date.now()).state;
     this.emit("state", this.state);
+    if (voided.length !== this.overruled.length) {
+      this.overruled = voided;
+      this.emit("voided", voided);
+    }
   }
 
   updateSettings(patch: Partial<DeviceSettings>): void {

@@ -1,4 +1,6 @@
 import { chainOf, formatDateTime, levelMark, type CtdpState, type HistoryEntry } from "../../../shared/ctdp";
+import type { SyncView } from "../../../shared/ipc";
+import { deviceLabel } from "../components/VoidedBanner";
 
 const LIMIT = 300;
 
@@ -19,8 +21,21 @@ function describe(e: HistoryEntry): { tone: string; text: string } {
   }
 }
 
-export function HistoryPage({ state }: { state: CtdpState }) {
-  const entries = [...state.history].reverse().slice(0, LIMIT);
+interface Row {
+  id: string;
+  at: number;
+  tone: string;
+  text: string;
+  sub: string;
+  voided?: boolean;
+}
+
+export function HistoryPage({ state, sync }: { state: CtdpState; sync: SyncView }) {
+  const rows: Row[] = [
+    ...state.history.map((e) => ({ id: e.id, at: e.at, ...describe(e), sub: chainOf(state, e.chainId)?.name ?? "Deleted chain" })),
+    ...sync.voided.map((v) => ({ id: `voided-${v.id}`, at: v.at, tone: "voided", text: v.text, sub: deviceLabel(v.device, sync), voided: true })),
+  ];
+  const entries = rows.sort((a, b) => b.at - a.at).slice(0, LIMIT);
   const units = state.history.filter((e) => e.kind === "kept" && e.level === 1).length;
   return (
     <section className="card">
@@ -30,19 +45,17 @@ export function HistoryPage({ state }: { state: CtdpState }) {
         <p className="empty">Nothing yet.</p>
       ) : (
         <ul className="list">
-          {entries.map((e) => {
-            const { tone, text } = describe(e);
-            return (
-              <li key={e.id} className={`entry ${tone}`}>
-                <span className="dot" />
-                <span className="list-main">
-                  {text}
-                  <span className="list-sub">{chainOf(state, e.chainId)?.name ?? "Deleted chain"}</span>
-                </span>
-                <span className="list-meta">{formatDateTime(e.at)}</span>
-              </li>
-            );
-          })}
+          {entries.map((e) => (
+            <li key={e.id} className={`entry ${e.tone}`}>
+              <span className="dot" />
+              <span className="list-main">
+                {e.text}
+                {e.voided && <span className="tag voided-tag">Voided on merge</span>}
+                <span className="list-sub">{e.sub}</span>
+              </span>
+              <span className="list-meta">{formatDateTime(e.at)}</span>
+            </li>
+          ))}
         </ul>
       )}
     </section>

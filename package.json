@@ -2,7 +2,7 @@
   "name": "ctdp-desktop",
   "productName": "CTDP",
   "version": "0.1.0",
-  "description": "CTDP 链式时延协议的桌面工具：神圣座位、下必为例、预约",
+  "description": "CTDP \u94fe\u5f0f\u65f6\u5ef6\u534f\u8bae\u7684\u684c\u9762\u5de5\u5177\uff1a\u795e\u5723\u5ea7\u4f4d\u3001\u4e0b\u5fc5\u4e3a\u4f8b\u3001\u9884\u7ea6",
   "private": true,
   "main": "dist/main/index.js",
   "scripts": {
@@ -12,9 +12,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "start": "npm run build && electron .",
-    "smoke": "npm run build && bash scripts/smoke.sh",
+    "smoke": "npm run build && npm run build:server && bash scripts/smoke.sh",
     "icons": "python3 scripts/make-icons.py",
-    "dist:win": "npm run build && electron-builder --win zip --x64"
+    "dist:win": "npm run build && electron-builder --win zip --x64",
+    "build:server": "npm --prefix server run build"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

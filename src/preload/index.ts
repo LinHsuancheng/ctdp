@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
 import type { DeviceSettings } from "../shared/ctdp/device";
 import type { CtdpState } from "../shared/ctdp/types";
-import { IPC, type CtdpApi } from "../shared/ipc";
+import { IPC, type CtdpApi, type SyncView } from "../shared/ipc";
 
 const api: CtdpApi = {
   getState: () => ipcRenderer.invoke(IPC.getState),
@@ -24,6 +24,16 @@ const api: CtdpApi = {
   revealData: () => ipcRenderer.send(IPC.revealData),
   exportData: () => ipcRenderer.invoke(IPC.exportData),
   importData: () => ipcRenderer.invoke(IPC.importData),
+  getSync: () => ipcRenderer.invoke(IPC.getSync),
+  onSync: (listener) => {
+    const handler = (_e: IpcRendererEvent, view: SyncView) => listener(view);
+    ipcRenderer.on(IPC.sync, handler);
+    return () => ipcRenderer.removeListener(IPC.sync, handler);
+  },
+  syncConnect: (url, token) => ipcRenderer.invoke(IPC.syncConnect, url, token),
+  syncDisconnect: () => ipcRenderer.invoke(IPC.syncDisconnect),
+  syncNow: () => ipcRenderer.invoke(IPC.syncNow),
+  ackVoided: () => ipcRenderer.invoke(IPC.ackVoided),
 };
 
 contextBridge.exposeInMainWorld("ctdp", api);

@@ -9,3 +9,4 @@ export * from "./reducer";
 export * from "./guards";
 export * from "./device";
 export * from "./log";
+export * from "./sync";

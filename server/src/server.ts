@@ -1,0 +1,24 @@
+import { mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { createApp } from "./app";
+import { loadConfig } from "./config";
+import { createPushSender } from "./push";
+import { SyncStore } from "./store";
+
+const config = loadConfig();
+mkdirSync(config.dataDir, { recursive: true });
+const store = new SyncStore(join(config.dataDir, "ctdp.db"));
+const app = createApp({ token: config.token, store, push: createPushSender(store, config.vapidSubject) });
+
+app.server.listen(config.port, config.host, () => {
+  console.log(`ctdp sync server on http://${config.host}:${config.port}, data in ${config.dataDir}`);
+});
+
+const shutdown = () => {
+  void app.close().then(() => {
+    store.close();
+    process.exit(0);
+  });
+};
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

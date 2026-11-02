@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { app, type BrowserWindow } from "electron";
 import type { Engine } from "./engine";
+import type { SyncClient } from "./sync";
 import { existsSync } from "node:fs";
 import { defaultState } from "../shared/ctdp";
 import { deviceFile, readDataFile, saveData } from "./store";
@@ -45,7 +46,7 @@ function check(cond: boolean, msg: string): void {
   if (!cond) throw new Error(msg);
 }
 
-export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine: Engine): Promise<void> {
+export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine: Engine, sync: SyncClient): Promise<void> {
   try {
     const chainId = engine.get().primaryChainId!;
     await textOf(main, "Desk");
@@ -88,6 +89,21 @@ export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine:
     main.webContents.executeJavaScript(`[...document.querySelectorAll("nav button, .tabs button")].find((b) => b.textContent === "Settings")?.click()`);
     await textOf(main, "ctdp-state.json");
     await textOf(main, "Show notifications on this device");
+
+    // Sync with the real server started by scripts/smoke.sh.
+    const url = process.env.CTDP_SMOKE_SYNC_URL;
+    const token = process.env.CTDP_SMOKE_SYNC_TOKEN;
+    check(Boolean(url && token), "smoke.sh should start a sync server");
+    const connected = await sync.connect(url!, token!);
+    check(connected.ok, `connecting to the sync server failed: ${connected.message}`);
+    engine.dispatch({ type: "saveCategory", categoryId: null, name: "Synced category" });
+    await sync.syncNow();
+    const remote = (await (await fetch(`${url}/api/data`, { headers: { authorization: `Bearer ${token}` } })).json()) as {
+      entries: { action: { type: string; name?: string } }[];
+    };
+    check(remote.entries.length === engine.getData().log.length, "the server should hold every log entry");
+    check(remote.entries.some((e) => e.action.name === "Synced category"), "a new action should reach the server");
+    await textOf(main, "Synced at");
 
     console.log(`SMOKE OK\n--- mini ---\n${miniText}\n--- main (seated) ---\n${mainText}`);
     app.exit(0);

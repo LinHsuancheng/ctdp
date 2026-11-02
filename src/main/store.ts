@@ -9,11 +9,30 @@ export const dataFile = () => join(app.getPath("userData"), "ctdp-state.json");
 /** This device's id and preferences; never copied to another computer. */
 export const deviceFile = () => join(app.getPath("userData"), "ctdp-device.json");
 
+/** Connection to a sync server. */
+export interface SyncConfig {
+  url: string;
+  token: string;
+  /** Server cursor after the last successful sync. */
+  cursor: number;
+  /** Highest own sequence number the server has. */
+  ackSeq: number;
+}
+
 export interface Device {
   id: string;
   /** Last log sequence number used on this device. */
   seq: number;
   settings: DeviceSettings;
+  sync: SyncConfig | null;
+  /** Voided entries the user has already been told about. */
+  seenVoided: string[];
+}
+
+function parseSync(raw: unknown): SyncConfig | null {
+  if (!isObject(raw) || typeof raw.url !== "string" || typeof raw.token !== "string") return null;
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+  return { url: raw.url, token: raw.token, cursor: num(raw.cursor), ackSeq: num(raw.ackSeq) };
 }
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
@@ -79,14 +98,21 @@ export function loadDevice(legacySettings: Record<string, unknown> | null): Devi
       const raw: unknown = JSON.parse(readFileSync(file, "utf8"));
       if (isObject(raw) && typeof raw.id === "string" && raw.id) {
         const settings = sanitizeDeviceSettings(isObject(raw.settings) ? raw.settings : {});
-        return { id: raw.id, seq: typeof raw.seq === "number" ? raw.seq : 0, settings };
+        const seenVoided = Array.isArray(raw.seenVoided) ? raw.seenVoided.filter((v): v is string => typeof v === "string") : [];
+        return { id: raw.id, seq: typeof raw.seq === "number" ? raw.seq : 0, settings, sync: parseSync(raw.sync), seenVoided };
       }
       throw new Error("malformed device file");
     } catch (err) {
       setAside(file, err);
     }
   }
-  const device = { id: randomUUID().slice(0, 8), seq: 0, settings: sanitizeDeviceSettings(legacySettings ?? {}) };
+  const device: Device = {
+    id: randomUUID().slice(0, 8),
+    seq: 0,
+    settings: sanitizeDeviceSettings(legacySettings ?? {}),
+    sync: null,
+    seenVoided: [],
+  };
   saveDevice(device);
   return device;
 }

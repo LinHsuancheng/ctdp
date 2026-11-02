@@ -25,7 +25,7 @@ export function parseState(raw: unknown): CtdpState | null {
   };
 }
 
-function isEntry(v: unknown): v is LogEntry {
+export function isEntry(v: unknown): v is LogEntry {
   return (
     isObject(v) &&
     typeof v.id === "string" &&

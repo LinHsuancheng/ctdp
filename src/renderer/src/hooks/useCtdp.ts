@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { DEFAULT_DEVICE_SETTINGS, type Action, type CtdpState, type DeviceSettings } from "../../../shared/ctdp";
+import type { SyncView } from "../../../shared/ipc";
 
 /** Live state from the main process. */
 export function useCtdpState(): CtdpState | null {
@@ -29,6 +30,21 @@ export function useDeviceSettings(): DeviceSettings | null {
     };
   }, []);
   return settings;
+}
+
+/** Sync status and merge results. */
+export function useSync(): SyncView | null {
+  const [view, setView] = useState<SyncView | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void window.ctdp.getSync().then((v) => alive && setView(v));
+    const off = window.ctdp.onSync(setView);
+    return () => {
+      alive = false;
+      off();
+    };
+  }, []);
+  return view;
 }
 
 export const SettingsContext = createContext<DeviceSettings>(DEFAULT_DEVICE_SETTINGS);

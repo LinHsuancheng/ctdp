@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChainHeader } from "./components/ChainHeader";
-import { SettingsContext, useCtdpState, useDeviceSettings } from "./hooks/useCtdp";
+import { VoidedBanner } from "./components/VoidedBanner";
+import { SettingsContext, useCtdpState, useDeviceSettings, useSync } from "./hooks/useCtdp";
 import { ChainsPage } from "./pages/ChainsPage";
 import { ChunksPage } from "./pages/ChunksPage";
 import { FocusPage } from "./pages/FocusPage";
@@ -22,13 +23,15 @@ type TabKey = (typeof TABS)[number]["key"];
 export function App() {
   const state = useCtdpState();
   const settings = useDeviceSettings();
+  const sync = useSync();
   const [tab, setTab] = useState<TabKey>("focus");
-  if (!state || !settings) return <div className="loading">Loading…</div>;
+  if (!state || !settings || !sync) return <div className="loading">Loading…</div>;
 
   return (
     <SettingsContext.Provider value={settings}>
     <div className="app">
       <ChainHeader state={state} />
+      <VoidedBanner view={sync} />
       <nav className="tabs" role="tablist">
         {TABS.map((t) => (
           <button key={t.key} role="tab" aria-selected={tab === t.key} className={tab === t.key ? "tab active" : "tab"} onClick={() => setTab(t.key)}>
@@ -41,8 +44,8 @@ export function App() {
         {tab === "chains" && <ChainsPage state={state} />}
         {tab === "chunks" && <ChunksPage state={state} />}
         {tab === "precedents" && <PrecedentsPage state={state} />}
-        {tab === "history" && <HistoryPage state={state} />}
-        {tab === "settings" && <SettingsPage state={state} />}
+        {tab === "history" && <HistoryPage state={state} sync={sync} />}
+        {tab === "settings" && <SettingsPage state={state} sync={sync} />}
       </main>
     </div>
     </SettingsContext.Provider>

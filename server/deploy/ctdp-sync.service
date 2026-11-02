@@ -1,0 +1,24 @@
+[Unit]
+Description=CTDP sync server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ctdp
+Group=ctdp
+WorkingDirectory=/opt/ctdp/server
+EnvironmentFile=/etc/ctdp-sync.env
+# Use the path printed by `command -v node` if Node is not in /usr/bin.
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /opt/ctdp/server/dist/server.js
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/ctdp-sync
+
+[Install]
+WantedBy=multi-user.target

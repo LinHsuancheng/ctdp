@@ -488,3 +488,19 @@
   word-break: break-all;
   user-select: text;
 }
+
+.entry.voided .dot {
+  background: transparent;
+  border: 1px dashed var(--muted);
+}
+
+.entry.voided .list-main {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.voided-tag {
+  margin-left: 8px;
+  font-size: 11px;
+  display: inline-block;
+}
