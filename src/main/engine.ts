@@ -36,6 +36,13 @@ export class Engine extends EventEmitter<EngineEvents> {
     return events;
   }
 
+  /** Swaps in a whole state, e.g. from an import. */
+  replace(state: CtdpState): void {
+    this.state = state;
+    this.persist(state);
+    this.emit("state", state);
+  }
+
   start(): void {
     const tick = () => {
       this.dispatch({ type: "tick" });

@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from "electron";
+import { registerDataIpc } from "./data";
 import { Engine } from "./engine";
 import { registerIpc } from "./ipc";
 import { MiniController } from "./mini";
@@ -74,6 +75,7 @@ function boot(): void {
     const shortcuts = new Shortcuts({ reserve, start: quickStart });
 
     registerIpc(engine, { openMain, hideMini: () => mini.dismiss() });
+    registerDataIpc(engine);
     engine.on("state", (state) => {
       tray.update(state);
       mini.sync(state);

@@ -480,3 +480,11 @@
 .entry.neutral .dot {
   background: var(--muted);
 }
+
+.path {
+  margin: 6px 0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  word-break: break-all;
+  user-select: text;
+}

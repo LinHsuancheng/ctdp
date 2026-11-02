@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultState, isAction, migrate, reduce, formatDuration } from "../src/shared/ctdp";
+import { defaultState, isAction, migrate, parseState, reduce, formatDuration } from "../src/shared/ctdp";
 import { DESK, MIN, T0, run, seatFocus } from "./helpers";
 
 const chainInput = { name: "Gym", trigger: "Tie shoes", signal: "Clap", windowMin: 10 };
@@ -75,6 +75,14 @@ describe("persistence and IPC", () => {
     const { state } = run([[T0, seatFocus()]]);
     expect(migrate(JSON.parse(JSON.stringify(state)))).toEqual(state);
     expect(migrate({ version: 1, mainChain: 3 })).toEqual(defaultState());
+  });
+
+  it("tells CTDP data apart from other files when importing", () => {
+    const { state } = run([[T0, seatFocus()]]);
+    expect(parseState(JSON.parse(JSON.stringify(state)))).toEqual(state);
+    expect(parseState({ version: 1, mainChain: 3 })).toBeNull();
+    expect(parseState({ version: 2, chains: [] })).toBeNull();
+    expect(parseState("hello")).toBeNull();
   });
 
   it("validates actions", () => {

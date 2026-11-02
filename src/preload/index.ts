@@ -12,6 +12,10 @@ const api: CtdpApi = {
   },
   openMain: () => ipcRenderer.send(IPC.openMain),
   hideMini: () => ipcRenderer.send(IPC.hideMini),
+  dataFile: () => ipcRenderer.invoke(IPC.dataFile),
+  revealData: () => ipcRenderer.send(IPC.revealData),
+  exportData: () => ipcRenderer.invoke(IPC.exportData),
+  importData: () => ipcRenderer.invoke(IPC.importData),
 };
 
 contextBridge.exposeInMainWorld("ctdp", api);

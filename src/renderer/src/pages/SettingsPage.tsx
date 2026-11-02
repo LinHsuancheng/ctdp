@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { levelMark, type CtdpState, type Settings } from "../../../shared/ctdp";
+import type { DataResult } from "../../../shared/ipc";
 import { dispatch } from "../hooks/useCtdp";
 
 function Categories({ state }: { state: CtdpState }) {
@@ -28,6 +29,39 @@ function Categories({ state }: { state: CtdpState }) {
           Add
         </button>
       </div>
+    </section>
+  );
+}
+
+function DataSection() {
+  const [file, setFile] = useState("");
+  const [result, setResult] = useState<DataResult | null>(null);
+  useEffect(() => {
+    void window.ctdp.dataFile().then(setFile);
+  }, []);
+  const run = (op: () => Promise<DataResult>) => void op().then((r) => setResult(r.message ? r : null));
+
+  return (
+    <section className="card">
+      <h2>Data</h2>
+      <p className="hint">Everything is stored in one file on this computer:</p>
+      <p className="path">{file}</p>
+      <p className="hint">
+        To move to another computer, export here and import there, or copy this file into the same folder on the new computer while CTDP is
+        not running.
+      </p>
+      <div className="row">
+        <button className="ghost small" onClick={() => window.ctdp.revealData()}>
+          Show in folder
+        </button>
+        <button className="secondary small" onClick={() => run(window.ctdp.exportData)}>
+          Export…
+        </button>
+        <button className="secondary small" onClick={() => run(window.ctdp.importData)}>
+          Import…
+        </button>
+      </div>
+      {result && <p className={result.ok ? "notice ok" : "notice"}>{result.message}</p>}
     </section>
   );
 }
@@ -78,6 +112,7 @@ export function SettingsPage({ state }: { state: CtdpState }) {
         </div>
       </section>
       <Categories state={state} />
+      <DataSection />
     </>
   );
 }

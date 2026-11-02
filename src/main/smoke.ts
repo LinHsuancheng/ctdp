@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { app, type BrowserWindow } from "electron";
 import type { Engine } from "./engine";
+import { readStateFile, saveState } from "./store";
 
 /**
  * Headless end-to-end check used by scripts/smoke.sh: drives the engine and
@@ -60,6 +61,18 @@ export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine:
     const fresh = engine.get().chains.find((c) => c.name === "Fresh");
     check(fresh !== undefined && engine.get().primaryChainId === fresh.id, "a new chain should take over as primary");
     check(!engine.get().successionPending, "succession should close after a new primary is chosen");
+
+    const exported = join(app.getPath("userData"), "export.json");
+    saveState(engine.get(), exported);
+    const before = engine.get();
+    engine.dispatch({ type: "deleteChain", chainId: fresh!.id });
+    const imported = readStateFile(exported);
+    check(imported !== null && JSON.stringify(imported) === JSON.stringify(before), "export should read back unchanged");
+    engine.replace(imported!);
+    check(engine.get().chains.some((c) => c.name === "Fresh"), "import should restore the deleted chain");
+    check(readStateFile(join(app.getPath("userData"), "missing.json")) === null, "a missing file is not CTDP data");
+    main.webContents.executeJavaScript(`[...document.querySelectorAll("nav button, .tabs button")].find((b) => b.textContent === "Settings")?.click()`);
+    await textOf(main, "ctdp-state.json");
 
     console.log(`SMOKE OK\n--- mini ---\n${miniText}\n--- main (seated) ---\n${mainText}`);
     app.exit(0);
