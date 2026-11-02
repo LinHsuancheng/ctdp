@@ -11,7 +11,7 @@ A Windows desktop tool for edmond's Chained Time-Delay Protocol: sacred seat, pr
 
 ## Data
 
-All data lives in one JSON file, `ctdp-state.json`, in Electron's userData folder:
+Shared data lives in `ctdp-state.json` in Electron's userData folder. It holds a snapshot plus the **action log**: every action that changed something, with its device and time. The state shown is always the replay of that log, which is what lets several devices share one history (see `src/shared/ctdp/log.ts`). Next to it, `ctdp-device.json` holds this device's id and preferences (shortcuts, mini window, quick-start chunk, notifications); it is never shared.
 
 | OS | Path |
 |----|------|
@@ -20,7 +20,7 @@ All data lives in one JSON file, `ctdp-state.json`, in Electron's userData folde
 
 Settings → Data shows the exact path and offers **Show in folder**, **Export…** and **Import…**. Import checks the file, asks for confirmation, and saves the current data as `ctdp-state.json.before-import-<time>` first. An unreadable data file is moved aside as `ctdp-state.json.corrupt-<time>` instead of being overwritten.
 
-To move to another computer: export on the old one and import on the new one, or quit CTDP (tray → Quit) and copy `ctdp-state.json` into the same folder on the new computer.
+To move to another computer: export on the old one and import on the new one, or quit CTDP (tray → Quit) and copy `ctdp-state.json` into the same folder on the new computer. Do not copy `ctdp-device.json`: two devices with the same id would collide once syncing exists. A version-2 file from before the action log is upgraded on start (kept as `ctdp-state.json.v2-backup`), and its settings move to the device file.
 
 ## Layout
 

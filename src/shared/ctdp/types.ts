@@ -124,18 +124,9 @@ export type HistoryEntry = { id: string; at: number; chainId: string } & (
 
 export type HistoryInput = HistoryEntry extends infer E ? (E extends unknown ? Omit<E, "id" | "at"> : never) : never;
 
-export interface Settings {
-  /** Electron accelerators; both act on the primary chain. */
-  reserveShortcut: string;
-  startShortcut: string;
-  showMiniWindow: boolean;
-  /** Chunk the start shortcut seats when the primary chain has nothing open. */
-  quickStartChunkId: string | null;
-}
-
+/** Shared by every device: everything here is derived from the action log. */
 export interface CtdpState {
-  version: 2;
-  settings: Settings;
+  version: 3;
   categories: Category[];
   chunks: Chunk[];
   chains: Chain[];
@@ -183,8 +174,7 @@ export type Action =
   | { type: "deleteChunk"; chunkId: string }
   | { type: "saveCategory"; categoryId: string | null; name: string }
   | { type: "deleteCategory"; categoryId: string }
-  | { type: "removePrecedent"; chainId: string; track: Track; id: string }
-  | { type: "updateSettings"; patch: Partial<Settings> };
+  | { type: "removePrecedent"; chainId: string; track: Track; id: string };
 
 /** What happened; drives notifications. */
 export type DomainEvent =

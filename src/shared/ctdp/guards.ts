@@ -39,8 +39,6 @@ export function isAction(v: unknown): v is Action {
       return str(v.categoryId);
     case "removePrecedent":
       return str(v.chainId) && (v.track === "main" || v.track === "auxiliary") && str(v.id);
-    case "updateSettings":
-      return isObject(v.patch);
     default:
       return false;
   }

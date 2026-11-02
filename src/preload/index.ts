@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
+import type { DeviceSettings } from "../shared/ctdp/device";
 import type { CtdpState } from "../shared/ctdp/types";
 import { IPC, type CtdpApi } from "../shared/ipc";
 
@@ -9,6 +10,13 @@ const api: CtdpApi = {
     const handler = (_e: IpcRendererEvent, state: CtdpState) => listener(state);
     ipcRenderer.on(IPC.state, handler);
     return () => ipcRenderer.removeListener(IPC.state, handler);
+  },
+  getSettings: () => ipcRenderer.invoke(IPC.getSettings),
+  updateSettings: (patch) => ipcRenderer.invoke(IPC.updateSettings, patch),
+  onSettings: (listener) => {
+    const handler = (_e: IpcRendererEvent, settings: DeviceSettings) => listener(settings);
+    ipcRenderer.on(IPC.settings, handler);
+    return () => ipcRenderer.removeListener(IPC.settings, handler);
   },
   openMain: () => ipcRenderer.send(IPC.openMain),
   hideMini: () => ipcRenderer.send(IPC.hideMini),

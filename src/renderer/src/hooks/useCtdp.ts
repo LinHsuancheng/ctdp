@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import type { Action, CtdpState } from "../../../shared/ctdp";
+import { createContext, useContext, useEffect, useState } from "react";
+import { DEFAULT_DEVICE_SETTINGS, type Action, type CtdpState, type DeviceSettings } from "../../../shared/ctdp";
 
 /** Live state from the main process. */
 export function useCtdpState(): CtdpState | null {
@@ -15,6 +15,24 @@ export function useCtdpState(): CtdpState | null {
   }, []);
   return state;
 }
+
+/** Live preferences of this device from the main process. */
+export function useDeviceSettings(): DeviceSettings | null {
+  const [settings, setSettings] = useState<DeviceSettings | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void window.ctdp.getSettings().then((s) => alive && setSettings(s));
+    const off = window.ctdp.onSettings(setSettings);
+    return () => {
+      alive = false;
+      off();
+    };
+  }, []);
+  return settings;
+}
+
+export const SettingsContext = createContext<DeviceSettings>(DEFAULT_DEVICE_SETTINGS);
+export const useSettings = () => useContext(SettingsContext);
 
 /** Re-renders on an interval so countdowns move. */
 export function useNow(intervalMs = 250): number {

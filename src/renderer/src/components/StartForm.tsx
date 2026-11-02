@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { LEVEL_NAMES, levelMark, type Chain, type CtdpState } from "../../../shared/ctdp";
-import { dispatch } from "../hooks/useCtdp";
+import { dispatch, useSettings } from "../hooks/useCtdp";
 
 const ADHOC = "";
 
 export function StartForm({ state, chain }: { state: CtdpState; chain: Chain }) {
-  const [chunkId, setChunkId] = useState(state.settings.quickStartChunkId ?? ADHOC);
+  const settings = useSettings();
+  const [chunkId, setChunkId] = useState(settings.quickStartChunkId ?? ADHOC);
   const [task, setTask] = useState("");
   const [minutes, setMinutes] = useState(60);
   const [categoryId, setCategoryId] = useState<string | null>(state.categories[0]?.id ?? null);
@@ -58,7 +59,7 @@ export function StartForm({ state, chain }: { state: CtdpState; chain: Chain }) 
       )}
       <button className="primary" onClick={sit}>
         Sit down
-        {isPrimary && <span className="kbd">{state.settings.startShortcut}</span>}
+        {isPrimary && <span className="kbd">{settings.startShortcut}</span>}
       </button>
     </section>
   );

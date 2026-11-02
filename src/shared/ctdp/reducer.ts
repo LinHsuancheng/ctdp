@@ -9,7 +9,6 @@ import {
   saveChain,
   saveChunk,
   setPrimary,
-  updateSettings,
 } from "./library";
 import { abandonUnit, finishUnit, seat, settleChunk, violation } from "./mainTrack";
 import { MINUTE } from "./time";
@@ -51,8 +50,6 @@ export function reduce(state: CtdpState, action: Action, ctx: Context): Result {
       return deleteCategory(state, action.categoryId);
     case "removePrecedent":
       return removePrecedent(state, action.chainId, action.track, action.id);
-    case "updateSettings":
-      return updateSettings(state, action.patch);
     default:
       return unchanged(state);
   }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChainHeader } from "./components/ChainHeader";
-import { useCtdpState } from "./hooks/useCtdp";
+import { SettingsContext, useCtdpState, useDeviceSettings } from "./hooks/useCtdp";
 import { ChainsPage } from "./pages/ChainsPage";
 import { ChunksPage } from "./pages/ChunksPage";
 import { FocusPage } from "./pages/FocusPage";
@@ -21,10 +21,12 @@ type TabKey = (typeof TABS)[number]["key"];
 
 export function App() {
   const state = useCtdpState();
+  const settings = useDeviceSettings();
   const [tab, setTab] = useState<TabKey>("focus");
-  if (!state) return <div className="loading">Loading…</div>;
+  if (!state || !settings) return <div className="loading">Loading…</div>;
 
   return (
+    <SettingsContext.Provider value={settings}>
     <div className="app">
       <ChainHeader state={state} />
       <nav className="tabs" role="tablist">
@@ -43,5 +45,6 @@ export function App() {
         {tab === "settings" && <SettingsPage state={state} />}
       </main>
     </div>
+    </SettingsContext.Provider>
   );
 }

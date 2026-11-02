@@ -9,10 +9,18 @@ export function registerIpc(engine: Engine, handlers: { openMain(): void; hideMi
     if (!isAction(action)) throw new Error("invalid action");
     engine.dispatch(action);
   });
+  ipcMain.handle(IPC.getSettings, () => engine.settings());
+  ipcMain.handle(IPC.updateSettings, (_e, patch: unknown) => {
+    if (typeof patch !== "object" || patch === null) throw new Error("invalid settings");
+    engine.updateSettings(patch);
+  });
   ipcMain.on(IPC.openMain, () => handlers.openMain());
   ipcMain.on(IPC.hideMini, () => handlers.hideMini());
 
   engine.on("state", (state) => {
     for (const win of BrowserWindow.getAllWindows()) win.webContents.send(IPC.state, state);
+  });
+  engine.on("device", (settings) => {
+    for (const win of BrowserWindow.getAllWindows()) win.webContents.send(IPC.settings, settings);
   });
 }

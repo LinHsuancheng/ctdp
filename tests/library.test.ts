@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultState, isAction, migrate, parseState, reduce, formatDuration } from "../src/shared/ctdp";
+import { defaultState, isAction, parseData, parseState, reduce, formatDuration } from "../src/shared/ctdp";
 import { DESK, MIN, T0, run, seatFocus } from "./helpers";
 
 const chainInput = { name: "Gym", trigger: "Tie shoes", signal: "Clap", windowMin: 10 };
@@ -73,8 +73,9 @@ describe("chunks", () => {
 describe("persistence and IPC", () => {
   it("round-trips through JSON and rejects unknown versions", () => {
     const { state } = run([[T0, seatFocus()]]);
-    expect(migrate(JSON.parse(JSON.stringify(state)))).toEqual(state);
-    expect(migrate({ version: 1, mainChain: 3 })).toEqual(defaultState());
+    expect(parseState(JSON.parse(JSON.stringify(state)))).toEqual(state);
+    expect(parseData({ version: 1, mainChain: 3 })).toBeNull();
+    expect(defaultState().version).toBe(3);
   });
 
   it("tells CTDP data apart from other files when importing", () => {

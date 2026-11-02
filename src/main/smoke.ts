@@ -1,9 +1,11 @@
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { app, type BrowserWindow } from "electron";
 import type { Engine } from "./engine";
-import { readStateFile, saveState } from "./store";
+import { existsSync } from "node:fs";
+import { defaultState } from "../shared/ctdp";
+import { deviceFile, readDataFile, saveData } from "./store";
 
 /**
  * Headless end-to-end check used by scripts/smoke.sh: drives the engine and
@@ -11,9 +13,17 @@ import { readStateFile, saveState } from "./store";
  */
 export const isSmoke = () => process.argv.includes("--smoke");
 
-/** Must run before app ready so the check never touches real user data. */
+const LEGACY_SHORTCUT = "CommandOrControl+Alt+F9";
+
+/**
+ * Must run before app ready so the check never touches real user data. Starts
+ * from a version-2 (single-device) file to exercise the upgrade.
+ */
 export function prepareSmoke(): void {
-  app.setPath("userData", mkdtempSync(join(tmpdir(), "ctdp-smoke-")));
+  const dir = mkdtempSync(join(tmpdir(), "ctdp-smoke-"));
+  app.setPath("userData", dir);
+  const v2 = { ...defaultState(), version: 2, settings: { reserveShortcut: LEGACY_SHORTCUT, showMiniWindow: true } };
+  writeFileSync(join(dir, "ctdp-state.json"), JSON.stringify(v2));
 }
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -63,16 +73,21 @@ export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine:
     check(!engine.get().successionPending, "succession should close after a new primary is chosen");
 
     const exported = join(app.getPath("userData"), "export.json");
-    saveState(engine.get(), exported);
-    const before = engine.get();
+    saveData(engine.getData(), exported);
+    const before = engine.getData();
+    check(before.log.length > 0 && before.log.every((e) => e.action.type !== "tick"), "effective actions are logged, ticks are not");
     engine.dispatch({ type: "deleteChain", chainId: fresh!.id });
-    const imported = readStateFile(exported);
+    const imported = readDataFile(exported);
     check(imported !== null && JSON.stringify(imported) === JSON.stringify(before), "export should read back unchanged");
     engine.replace(imported!);
     check(engine.get().chains.some((c) => c.name === "Fresh"), "import should restore the deleted chain");
-    check(readStateFile(join(app.getPath("userData"), "missing.json")) === null, "a missing file is not CTDP data");
+    check(readDataFile(join(app.getPath("userData"), "missing.json")) === null, "a missing file is not CTDP data");
+    check(existsSync(deviceFile()), "the device file should exist");
+    check(engine.settings().reserveShortcut === LEGACY_SHORTCUT, "version-2 settings should move to this device");
+    check(existsSync(join(app.getPath("userData"), "ctdp-state.json.v2-backup")), "the version-2 file should be backed up");
     main.webContents.executeJavaScript(`[...document.querySelectorAll("nav button, .tabs button")].find((b) => b.textContent === "Settings")?.click()`);
     await textOf(main, "ctdp-state.json");
+    await textOf(main, "Show notifications on this device");
 
     console.log(`SMOKE OK\n--- mini ---\n${miniText}\n--- main (seated) ---\n${mainText}`);
     app.exit(0);

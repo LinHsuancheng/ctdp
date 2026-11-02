@@ -1,16 +1,9 @@
-import { LEVELS, type Chain, type ChainInput, type Counter, type CtdpState, type Level, type Settings } from "./types";
+import { LEVELS, type Chain, type ChainInput, type Counter, type CtdpState, type Level } from "./types";
 
 export const MAX_MINUTES = 600;
 export const MAX_WINDOW_MINUTES = 120;
 export const LEVEL_NAMES: Record<Level, string> = { 1: "Unit", 2: "Block", 3: "Day", 4: "Stretch", 5: "Week" };
 export const levelMark = (level: Level) => "#".repeat(level);
-
-export const DEFAULT_SETTINGS: Settings = {
-  reserveShortcut: "CommandOrControl+Alt+R",
-  startShortcut: "CommandOrControl+Alt+S",
-  showMiniWindow: true,
-  quickStartChunkId: "chunk-focus",
-};
 
 export const emptyCounters = (): Counter[] => LEVELS.map(() => ({ current: 0, best: 0 }));
 
@@ -45,8 +38,7 @@ export function defaultState(): CtdpState {
     name,
   }));
   return {
-    version: 2,
-    settings: { ...DEFAULT_SETTINGS },
+    version: 3,
     categories,
     chunks: [
       {
@@ -92,19 +84,5 @@ export function defaultState(): CtdpState {
     seat: null,
     reservation: null,
     history: [],
-  };
-}
-
-/** Fills in defaults and clamps anything out of range. */
-export function sanitizeSettings(raw: Record<string, unknown>): Settings {
-  const d = DEFAULT_SETTINGS;
-  return {
-    reserveShortcut: text(raw.reserveShortcut, d.reserveShortcut),
-    startShortcut: text(raw.startShortcut, d.startShortcut),
-    showMiniWindow: typeof raw.showMiniWindow === "boolean" ? raw.showMiniWindow : d.showMiniWindow,
-    quickStartChunkId:
-      typeof raw.quickStartChunkId === "string" || raw.quickStartChunkId === null
-        ? (raw.quickStartChunkId as string | null)
-        : d.quickStartChunkId,
   };
 }

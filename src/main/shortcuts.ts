@@ -1,5 +1,5 @@
 import { globalShortcut } from "electron";
-import type { Settings } from "../shared/ctdp";
+import type { DeviceSettings } from "../shared/ctdp";
 
 /** Global hotkeys on the primary chain: reserve is the signal, start is sitting down. */
 export class Shortcuts {
@@ -7,7 +7,7 @@ export class Shortcuts {
 
   constructor(private readonly handlers: { reserve(): void; start(): void }) {}
 
-  apply(settings: Settings): void {
+  apply(settings: DeviceSettings): void {
     const key = `${settings.reserveShortcut}|${settings.startShortcut}`;
     if (key === this.applied) return;
     this.applied = key;

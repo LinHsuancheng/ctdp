@@ -1,5 +1,5 @@
 import type { BrowserWindow } from "electron";
-import type { CtdpState } from "../shared/ctdp";
+import type { CtdpState, DeviceSettings } from "../shared/ctdp";
 
 const activityKey = (s: CtdpState) =>
   s.seat ? `s${s.seat.node.id}` : s.reservation ? `r${s.reservation.reservedAt}` : "idle";
@@ -11,9 +11,9 @@ export class MiniController {
 
   constructor(private readonly win: BrowserWindow) {}
 
-  sync(state: CtdpState): void {
+  sync(state: CtdpState, settings: DeviceSettings): void {
     this.current = activityKey(state);
-    const want = state.settings.showMiniWindow && this.current !== "idle" && this.dismissed !== this.current;
+    const want = settings.showMiniWindow && this.current !== "idle" && this.dismissed !== this.current;
     if (want && !this.win.isVisible()) this.win.showInactive();
     else if (!want && this.win.isVisible()) this.win.hide();
   }

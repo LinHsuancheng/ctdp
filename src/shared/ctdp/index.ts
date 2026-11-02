@@ -7,3 +7,5 @@ export * from "./selectors";
 export * from "./context";
 export * from "./reducer";
 export * from "./guards";
+export * from "./device";
+export * from "./log";

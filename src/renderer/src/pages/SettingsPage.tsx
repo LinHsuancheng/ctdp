@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { levelMark, type CtdpState, type Settings } from "../../../shared/ctdp";
+import { levelMark, type CtdpState, type DeviceSettings } from "../../../shared/ctdp";
 import type { DataResult } from "../../../shared/ipc";
-import { dispatch } from "../hooks/useCtdp";
+import { dispatch, useSettings } from "../hooks/useCtdp";
 
 function Categories({ state }: { state: CtdpState }) {
   const [name, setName] = useState("");
@@ -67,9 +67,9 @@ function DataSection() {
 }
 
 export function SettingsPage({ state }: { state: CtdpState }) {
-  const [draft, setDraft] = useState<Settings>(state.settings);
+  const [draft, setDraft] = useState<DeviceSettings>(useSettings());
   const [saved, setSaved] = useState(false);
-  const set = <K extends keyof Settings>(key: K, value: Settings[K]) => {
+  const set = <K extends keyof DeviceSettings>(key: K, value: DeviceSettings[K]) => {
     setDraft((d) => ({ ...d, [key]: value }));
     setSaved(false);
   };
@@ -77,7 +77,8 @@ export function SettingsPage({ state }: { state: CtdpState }) {
   return (
     <>
       <section className="card">
-        <h2>Settings</h2>
+        <h2>This device</h2>
+        <p className="hint">These preferences stay on this computer and are not shared with your other devices.</p>
         <div className="grid2">
           <label className="field">
             <span>Reserve shortcut (primary chain)</span>
@@ -104,8 +105,12 @@ export function SettingsPage({ state }: { state: CtdpState }) {
           <input type="checkbox" checked={draft.showMiniWindow} onChange={(e) => set("showMiniWindow", e.target.checked)} />
           Show the always-on-top mini window while seated or reserved
         </label>
+        <label className="check">
+          <input type="checkbox" checked={draft.notifications} onChange={(e) => set("notifications", e.target.checked)} />
+          Show notifications on this device
+        </label>
         <div className="row">
-          <button className="primary" onClick={() => void dispatch({ type: "updateSettings", patch: draft }).then(() => setSaved(true))}>
+          <button className="primary" onClick={() => void window.ctdp.updateSettings(draft).then(() => setSaved(true))}>
             Save
           </button>
           {saved && <span className="notice ok inline">Saved</span>}

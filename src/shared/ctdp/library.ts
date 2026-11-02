@@ -1,7 +1,7 @@
-import { clampInt, MAX_MINUTES, MAX_WINDOW_MINUTES, newChain, sanitizeSettings, text } from "./defaults";
+import { clampInt, MAX_MINUTES, MAX_WINDOW_MINUTES, newChain, text } from "./defaults";
 import { pushHistory, unchanged, updateChain, type Context, type Result } from "./context";
 import { chainOf } from "./selectors";
-import { LEVELS, type ChainInput, type Chunk, type ChunkInput, type CtdpState, type Settings, type Track } from "./types";
+import { LEVELS, type ChainInput, type Chunk, type ChunkInput, type CtdpState, type Track } from "./types";
 
 /** Any chain may take over once the primary is lost (or when there is none). */
 export function setPrimary(state: CtdpState, chainId: string, ctx: Context): Result {
@@ -96,9 +96,7 @@ export function saveChunk(state: CtdpState, chunkId: string | null, input: Chunk
 
 export function deleteChunk(state: CtdpState, chunkId: string): Result {
   if (state.chunks.some((c) => c.children.includes(chunkId))) return unchanged(state);
-  const settings =
-    state.settings.quickStartChunkId === chunkId ? { ...state.settings, quickStartChunkId: null } : state.settings;
-  return { state: { ...state, settings, chunks: state.chunks.filter((c) => c.id !== chunkId) }, events: [] };
+  return { state: { ...state, chunks: state.chunks.filter((c) => c.id !== chunkId) }, events: [] };
 }
 
 export function saveCategory(state: CtdpState, categoryId: string | null, name: string, ctx: Context): Result {
@@ -133,12 +131,4 @@ export function removePrecedent(state: CtdpState, chainId: string, track: Track,
       : { ...c, auxiliary: { ...c.auxiliary, precedents: c.auxiliary.precedents.filter((p) => p.id !== id) } },
   );
   return { state: next, events: [] };
-}
-
-export function updateSettings(state: CtdpState, patch: Partial<Settings>): Result {
-  const settings = sanitizeSettings({ ...state.settings, ...patch });
-  if (settings.quickStartChunkId && !state.chunks.some((c) => c.id === settings.quickStartChunkId)) {
-    settings.quickStartChunkId = state.settings.quickStartChunkId;
-  }
-  return { state: { ...state, settings }, events: [] };
 }
