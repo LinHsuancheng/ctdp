@@ -46,8 +46,33 @@ export interface DataResult {
   message: string;
 }
 
-/** What the preload exposes to renderers as window.ctdp. */
+/** Lock-screen notifications on the phone, delivered by the sync server. */
+export interface PushStatus {
+  state: "unsupported" | "denied" | "off" | "on";
+  message: string;
+}
+
+export interface Outcome {
+  ok: boolean;
+  message: string;
+}
+
+export interface PushApi {
+  status(): Promise<PushStatus>;
+  /** Must be called from a tap: it may ask for permission. */
+  enable(): Promise<Outcome>;
+  disable(): Promise<Outcome>;
+  test(): Promise<Outcome>;
+}
+
+/**
+ * What the UI talks to as window.ctdp: the preload on the desktop, or the
+ * in-page host of the phone web app.
+ */
 export interface CtdpApi {
+  platform: "desktop" | "web";
+  /** Only on the web app. */
+  push?: PushApi;
   getState(): Promise<CtdpState>;
   dispatch(action: Action): Promise<void>;
   onState(listener: (state: CtdpState) => void): () => void;
@@ -63,7 +88,7 @@ export interface CtdpApi {
   importData(): Promise<DataResult>;
   getSync(): Promise<SyncView>;
   onSync(listener: (view: SyncView) => void): () => void;
-  syncConnect(url: string, token: string): Promise<{ ok: boolean; message: string }>;
+  syncConnect(url: string, token: string): Promise<Outcome>;
   syncDisconnect(): Promise<void>;
   syncNow(): Promise<void>;
   ackVoided(): Promise<void>;

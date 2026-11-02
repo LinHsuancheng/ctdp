@@ -1,9 +1,7 @@
 import { BrowserWindow, dialog, ipcMain } from "electron";
-import { voidedOf } from "../shared/ctdp";
-import { IPC, type SyncView } from "../shared/ipc";
-import type { Engine } from "./engine";
-import { backupData, saveDevice, type Device } from "./store";
-import { SyncClient } from "./sync";
+import { IPC } from "../shared/ipc";
+import { ackVoided, buildSyncView, SyncClient, type Device, type Engine } from "../shared/runtime";
+import { backupData, saveDevice } from "./store";
 
 /** Wires the sync client to Electron: confirmation dialog, IPC, and the renderer view. */
 export function setupSync(engine: Engine, device: Device): SyncClient {
@@ -27,11 +25,7 @@ export function setupSync(engine: Engine, device: Device): SyncClient {
     },
   });
 
-  const view = (): SyncView => {
-    const voided = voidedOf(engine.voided(), engine.get());
-    const seen = new Set(device.seenVoided);
-    return { ...client.status(), deviceId: device.id, voided, unseen: voided.filter((v) => !seen.has(v.id)) };
-  };
+  const view = () => buildSyncView(engine, device, client);
   const broadcast = () => {
     const v = view();
     for (const win of BrowserWindow.getAllWindows()) win.webContents.send(IPC.sync, v);
@@ -47,7 +41,7 @@ export function setupSync(engine: Engine, device: Device): SyncClient {
   ipcMain.handle(IPC.syncDisconnect, () => client.disconnect());
   ipcMain.handle(IPC.syncNow, () => client.syncNow());
   ipcMain.handle(IPC.ackVoided, () => {
-    device.seenVoided = engine.voided().map((e) => e.id);
+    ackVoided(engine, device);
     saveDevice(device);
     broadcast();
   });

@@ -1,8 +1,8 @@
-import { EventEmitter } from "node:events";
-import type { CtdpData, DataResponse, LogEntry, SyncResponse } from "../shared/ctdp";
-import type { SyncStatus } from "../shared/ipc";
+import type { CtdpData, DataResponse, LogEntry, SyncResponse } from "../ctdp";
+import type { SyncStatus } from "../ipc";
+import type { Device } from "./device";
+import { Emitter } from "./emitter";
 import type { Engine } from "./engine";
-import type { Device } from "./store";
 
 export interface SyncDeps {
   engine: Engine;
@@ -11,7 +11,7 @@ export interface SyncDeps {
   /** Asks before this device's data is replaced by the server's. */
   confirmReplace(): Promise<boolean>;
   /** Keeps a copy of local data before it is replaced; returns where. */
-  backup(data: CtdpData): string;
+  backup(data: CtdpData): string | Promise<string>;
   fetch?: typeof fetch;
   intervalMs?: number;
 }
@@ -28,10 +28,10 @@ class SyncError extends Error {
 const SYNC_DELAY_MS = 300;
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-/** Keeps this device's log in step with the sync server. No Electron here, so tests can drive it. */
-export class SyncClient extends EventEmitter<{ status: [SyncStatus] }> {
-  private timer: NodeJS.Timeout | null = null;
-  private soon: NodeJS.Timeout | null = null;
+/** Keeps this device's log in step with the sync server. Runs in Electron's main process, the phone page and tests. */
+export class SyncClient extends Emitter<{ status: [SyncStatus] }> {
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private soon: ReturnType<typeof setTimeout> | null = null;
   private running: Promise<void> | null = null;
   private queued: Promise<void> | null = null;
   private current: SyncStatus;
@@ -39,7 +39,7 @@ export class SyncClient extends EventEmitter<{ status: [SyncStatus] }> {
 
   constructor(private readonly deps: SyncDeps) {
     super();
-    this.fetch = deps.fetch ?? fetch;
+    this.fetch = deps.fetch ?? ((input, init) => fetch(input, init));
     this.current = { url: deps.device.sync?.url ?? null, state: deps.device.sync ? "idle" : "off", lastSync: null, error: null };
     deps.engine.on("appended", () => this.scheduleSoon());
   }
@@ -92,7 +92,7 @@ export class SyncClient extends EventEmitter<{ status: [SyncStatus] }> {
         message = "Connected.";
       } else {
         if (!(await this.deps.confirmReplace())) return { ok: false, message: "Cancelled; nothing was changed." };
-        const backup = this.deps.backup(local);
+        const backup = await this.deps.backup(local);
         engine.replace({ version: 3, base: remote.base, log: remote.entries });
         device.sync = { url, token, cursor: remote.cursor, ackSeq: own(remote.entries) };
         message = `Connected. This device now uses the server's data; the previous data was saved to ${backup}`;

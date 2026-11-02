@@ -61,3 +61,6 @@ export function useNow(intervalMs = 250): number {
 }
 
 export const dispatch = (action: Action) => window.ctdp.dispatch(action);
+
+/** Global shortcuts exist only in the desktop app. */
+export const hasShortcuts = () => window.ctdp.platform === "desktop";

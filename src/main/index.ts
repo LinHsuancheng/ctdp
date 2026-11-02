@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from "electron";
 import { registerDataIpc } from "./data";
-import { Engine } from "./engine";
+import { Engine } from "../shared/runtime";
 import { registerIpc } from "./ipc";
 import { MiniController } from "./mini";
 import { Notifier } from "./notifier";

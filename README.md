@@ -24,13 +24,19 @@ To move to another computer: export on the old one and import on the new one, or
 
 ## Sync server
 
-`server/` is a small Node service (built-in SQLite, Web Push) that stores the shared action log for all devices and sends reminders to phones. Devices connect from Settings → Sync with the server address and token. Deployment: [server/DEPLOY.md](server/DEPLOY.md).
+`server/` is a small Node service (built-in SQLite, Web Push) that stores the shared action log for all devices and sends reminders to phones. Computers connect from Settings → Sync with the server address and token. Deployment: [server/DEPLOY.md](server/DEPLOY.md).
+
+## Phone web app
+
+`src/web/` is the phone client: the same React UI and the same engine and sync client (`src/shared/runtime/`), running in the page with data in IndexedDB instead of Electron's main process. The sync server serves it at its site root, so a phone opens `https://<server>/`, adds it to the Home Screen and enters only the token. It works offline after the first visit (`sw.js`) and gets reminders by Web Push. `npm run build:web` builds it into `dist/web/`.
 
 ## Layout
 
 ```
-src/shared/ctdp/   pure domain: types, reducer (mainTrack, auxiliary, library), tree helpers
-src/main/          Electron main: engine (timer + state), store, windows, tray, shortcuts, notifier, smoke check
+src/shared/ctdp/   pure domain: types, reducer (mainTrack, auxiliary, library), tree helpers, action log
+src/shared/runtime/ engine (timer + state), sync client, device record; shared by Electron and the web app
+src/main/          Electron main: store, windows, tray, shortcuts, notifier, smoke check
+src/web/           phone web app: in-page host of window.ctdp (IndexedDB, push), PWA manifest and service worker
 src/preload/       contextBridge API (window.ctdp)
 src/renderer/      React UI: main window pages and the always-on-top mini window
 server/            sync server (own package.json): API, SQLite store, reminders, deployment notes
@@ -43,6 +49,8 @@ tests/             vitest unit tests for the domain
 npm install          # Electron binary comes from the mirror in .npmrc
 npm test             # domain unit tests
 npm run typecheck
-npm run smoke        # builds app and server, starts the server, drives the real app headless under Xvfb
+npm run build:web    # phone web app into dist/web/
+npm run smoke        # builds app, web app and server, starts the server, drives the desktop app and the
+                     # phone web app (390x844 window) headless under Xvfb; CTDP_SMOKE_SHOTS=dir saves screenshots
 npm run dist:win     # release/CTDP-<version>-win.zip (unzip and run CTDP.exe)
 ```

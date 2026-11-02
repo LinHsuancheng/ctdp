@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { isEntry, parseState, replay, type DataResponse, type LogEntry, type SyncResponse } from "../../src/shared/ctdp";
 import type { PushSender } from "./push";
 import { ReminderScheduler } from "./reminders";
+import { serveStatic } from "./static";
 import type { SyncStore } from "./store";
 
 const MAX_BODY = 10 * 1024 * 1024;
@@ -58,8 +59,11 @@ export interface App {
   close(): Promise<void>;
 }
 
-/** The sync API. All routes but /api/health need `Authorization: Bearer <token>`. */
-export function createApp(opts: { token: string; store: SyncStore; push: PushSender }): App {
+/**
+ * The sync API, plus the phone web app from `staticDir` at every other path.
+ * All API routes but /api/health need `Authorization: Bearer <token>`.
+ */
+export function createApp(opts: { token: string; store: SyncStore; push: PushSender; staticDir?: string | null }): App {
   const { store, push } = opts;
   const expected = digest(opts.token);
   const reminders = new ReminderScheduler((r) => void push.send(r));
@@ -80,7 +84,11 @@ export function createApp(opts: { token: string; store: SyncStore; push: PushSen
     const path = new URL(req.url ?? "/", "http://localhost").pathname;
     const method = req.method ?? "GET";
     if (path === "/api/health") return send(res, 200, { ok: true });
-    if (!path.startsWith("/api/")) throw new HttpError(404, "not found");
+    if (!path.startsWith("/api/")) {
+      const served = opts.staticDir && (method === "GET" || method === "HEAD") && (await serveStatic(opts.staticDir, path, res, method === "HEAD"));
+      if (!served) throw new HttpError(404, "not found");
+      return;
+    }
     if (!authorized(req)) throw new HttpError(401, "wrong or missing token");
 
     const at = `${method} ${path}`;

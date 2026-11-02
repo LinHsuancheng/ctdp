@@ -1,5 +1,5 @@
 import { chainOf, formatClock, formatDuration, type Chain, type CtdpState } from "../../../shared/ctdp";
-import { dispatch, useSettings } from "../hooks/useCtdp";
+import { dispatch, hasShortcuts, useSettings } from "../hooks/useCtdp";
 import { ProgressBar } from "./ProgressBar";
 
 export function ReservationCard({ state, chain, now }: { state: CtdpState; chain: Chain; now: number }) {
@@ -42,7 +42,7 @@ export function ReservationCard({ state, chain, now }: { state: CtdpState; chain
       ) : (
         <button className="secondary" onClick={() => void dispatch({ type: "reserve", chainId: chain.id })}>
           Reserve
-          {chain.id === state.primaryChainId && <span className="kbd">{settings.reserveShortcut}</span>}
+          {chain.id === state.primaryChainId && hasShortcuts() && <span className="kbd">{settings.reserveShortcut}</span>}
         </button>
       )}
     </section>

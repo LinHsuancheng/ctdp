@@ -8,7 +8,10 @@ import zlib
 from pathlib import Path
 
 ACCENT = (37, 99, 235)  # blue-600
-OUT = Path(__file__).resolve().parent.parent / "resources"
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "resources"
+WEB = ROOT / "src" / "web" / "public" / "icons"
+WHITE = (255, 255, 255)
 
 
 def png(size: int, pixels) -> bytes:
@@ -22,9 +25,10 @@ def png(size: int, pixels) -> bytes:
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(rows, 9)) + chunk(b"IEND", b"")
 
 
-def ring(size: int):
+def ring(size: int, scale: float = 1.0, background=None):
+    """Yields RGBA rows. With a background, the icon is opaque (home-screen icons)."""
     c = (size - 1) / 2
-    outer, inner = size * 0.46, size * 0.26
+    outer, inner = size * 0.46 * scale, size * 0.26 * scale
     samples = 4  # supersampling for smooth edges
     for y in range(size):
         row = []
@@ -34,7 +38,11 @@ def ring(size: int):
                 for sx in range(samples):
                     d = math.hypot(x + (sx + 0.5) / samples - 0.5 - c, y + (sy + 0.5) / samples - 0.5 - c)
                     hit += inner <= d <= outer
-            row.append((*ACCENT, round(255 * hit / samples**2)))
+            a = hit / samples**2
+            if background is None:
+                row.append((*ACCENT, round(255 * a)))
+            else:
+                row.append((*(round(f * a + b * (1 - a)) for f, b in zip(ACCENT, background)), 255))
         yield row
 
 
@@ -43,6 +51,11 @@ def main() -> None:
     for name, size in (("icon.png", 256), ("tray.png", 32)):
         (OUT / name).write_bytes(png(size, list(ring(size))))
         print(f"wrote resources/{name} ({size}x{size})")
+    # Phone web app: opaque, with margin so rounded and maskable crops keep the ring whole.
+    WEB.mkdir(parents=True, exist_ok=True)
+    for name, size in (("icon-192.png", 192), ("icon-512.png", 512), ("apple-touch-icon.png", 180)):
+        (WEB / name).write_bytes(png(size, list(ring(size, 0.72, WHITE))))
+        print(f"wrote src/web/public/icons/{name} ({size}x{size})")
 
 
 if __name__ == "__main__":

@@ -1,10 +1,8 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { app, type BrowserWindow } from "electron";
-import type { Engine } from "./engine";
-import type { SyncClient } from "./sync";
-import { existsSync } from "node:fs";
+import { app, BrowserWindow } from "electron";
+import type { Engine, SyncClient } from "../shared/runtime";
 import { defaultState } from "../shared/ctdp";
 import { deviceFile, readDataFile, saveData } from "./store";
 
@@ -44,6 +42,106 @@ async function textOf(win: BrowserWindow, expected: string, timeoutMs = 8000): P
 
 function check(cond: boolean, msg: string): void {
   if (!cond) throw new Error(msg);
+}
+
+const js = <T>(win: BrowserWindow, code: string): Promise<T> => win.webContents.executeJavaScript(code);
+const clickButton = (win: BrowserWindow, label: string) =>
+  js<boolean>(win, `(() => { const b = [...document.querySelectorAll("button")].find((b) => b.textContent.startsWith(${JSON.stringify(label)})); b?.click(); return !!b; })()`);
+
+async function until(cond: () => Promise<boolean>, what: string, timeoutMs = 8000): Promise<void> {
+  const end = Date.now() + timeoutMs;
+  while (Date.now() < end) {
+    if (await cond()) return;
+    await delay(200);
+  }
+  throw new Error(`timed out waiting for ${what}`);
+}
+
+/** Saves a screenshot when CTDP_SMOKE_SHOTS names a folder. */
+async function shot(win: BrowserWindow, name: string): Promise<void> {
+  const dir = process.env.CTDP_SMOKE_SHOTS;
+  if (!dir) return;
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `${name}.png`), (await win.webContents.capturePage()).toPNG());
+}
+
+/**
+ * The phone web app, served by the same sync server, in an iPhone-sized
+ * window with its own storage: connect with the token, reserve on the phone,
+ * see it on the desktop and back, and survive a reload.
+ */
+async function phoneSmoke(url: string, token: string, engine: Engine, sync: SyncClient): Promise<void> {
+  const phone = new BrowserWindow({ width: 390, height: 844, useContentSize: true, webPreferences: { partition: "phone-smoke", sandbox: true, contextIsolation: true } });
+  await phone.loadURL(`${url}/`);
+  await textOf(phone, "Connect CTDP");
+  await shot(phone, "phone-connect");
+  await js(
+    phone,
+    `(() => {
+      const input = document.querySelector("input[type=password]");
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, ${JSON.stringify(token)});
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    })()`,
+  );
+  check(await clickButton(phone, "Connect"), "the phone should show a Connect button");
+  await textOf(phone, "Auxiliary track");
+  const phoneCategories = () => js<string[]>(phone, "window.ctdp.getState().then((s) => s.categories.map((c) => c.name))");
+  check((await phoneCategories()).includes("Synced category"), "the phone should take the server's data");
+  // Nothing may stick out past the screen edge, except inside the scrollable tab bar.
+  const overflow = () =>
+    js<string[]>(
+      phone,
+      `[...document.querySelectorAll("body *")]
+        .filter((el) => !el.closest(".tabs") && el.getBoundingClientRect().right > window.innerWidth + 1)
+        .map((el) => el.tagName + "." + el.className + ": " + (el.textContent ?? "").slice(0, 40))
+        .concat(document.documentElement.scrollWidth > window.innerWidth ? ["page scrolls sideways"] : [])`,
+    );
+  const noSideScroll = async () => {
+    const out = await overflow();
+    if (out.length) console.error("overflowing on the phone:", out);
+    return out.length === 0;
+  };
+  check(await noSideScroll(), "the phone layout should not scroll sideways");
+  check(!(await textOf(phone, "Reserve")).includes("CommandOrControl"), "the phone should not show desktop shortcuts");
+  await shot(phone, "phone-focus");
+
+  // Reserve on the phone; the desktop gets it.
+  check(await clickButton(phone, "Reserve"), "the phone should offer Reserve");
+  await textOf(phone, "Reserved");
+  await shot(phone, "phone-reserved");
+  await until(async () => {
+    await sync.syncNow();
+    return engine.get().reservation !== null;
+  }, "the phone's reservation to reach the desktop");
+
+  // The desktop acts; the phone gets it.
+  engine.dispatch({ type: "saveCategory", categoryId: null, name: "From desktop" });
+  await sync.syncNow();
+  await until(async () => {
+    await js(phone, "window.ctdp.syncNow()");
+    return (await phoneCategories()).includes("From desktop");
+  }, "the desktop's action to reach the phone");
+
+  const openTab = (name: string) => js(phone, `[...document.querySelectorAll(".tabs button")].find((b) => b.textContent === ${JSON.stringify(name)})?.click()`);
+  for (const tab of ["Chains", "Chunks", "Precedents", "History"]) {
+    await openTab(tab);
+    await delay(200);
+    check(await noSideScroll(), `the phone ${tab} tab should not scroll sideways`);
+    await shot(phone, `phone-${tab.toLowerCase()}`);
+  }
+  await openTab("Settings");
+  const settingsText = await textOf(phone, "Synced at");
+  check(settingsText.includes("This switch only affects this phone"), "the phone should show its notification switch");
+  check(!settingsText.includes("Reserve shortcut") && !settingsText.includes("Show in folder"), "desktop-only settings should be hidden on the phone");
+  check(await noSideScroll(), "the phone settings should not scroll sideways");
+  await shot(phone, "phone-settings");
+  check(await js<boolean>(phone, "navigator.serviceWorker.getRegistration().then((r) => !!r)"), "the service worker should be registered");
+
+  // Data stays on the phone across reloads.
+  phone.webContents.reload();
+  await textOf(phone, "Reserved");
+  check((await phoneCategories()).includes("From desktop"), "the phone should keep its data after a reload");
+  phone.destroy();
 }
 
 export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine: Engine, sync: SyncClient): Promise<void> {
@@ -104,6 +202,7 @@ export async function runSmoke(main: BrowserWindow, mini: BrowserWindow, engine:
     check(remote.entries.length === engine.getData().log.length, "the server should hold every log entry");
     check(remote.entries.some((e) => e.action.name === "Synced category"), "a new action should reach the server");
     await textOf(main, "Synced at");
+    await phoneSmoke(url!, token!, engine, sync);
 
     console.log(`SMOKE OK\n--- mini ---\n${miniText}\n--- main (seated) ---\n${mainText}`);
     app.exit(0);

@@ -3,9 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp, type App } from "../server/src/app";
 import { remindersFor, ReminderScheduler } from "../server/src/reminders";
 import { SyncStore } from "../server/src/store";
-import { Engine } from "../src/main/engine";
-import type { Device } from "../src/main/store";
-import { SyncClient } from "../src/main/sync";
+import { Engine, SyncClient, type Device } from "../src/shared/runtime";
 import { DEFAULT_DEVICE_SETTINGS, defaultState, emptyData, type CtdpData } from "../src/shared/ctdp";
 import { DESK, MIN, T0, desk, seatFocus } from "./helpers";
 

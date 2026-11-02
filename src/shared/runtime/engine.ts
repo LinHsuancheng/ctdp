@@ -1,4 +1,3 @@
-import { EventEmitter } from "node:events";
 import {
   applyEntry,
   entryId,
@@ -13,10 +12,11 @@ import {
   type DomainEvent,
   type LogEntry,
   type Result,
-} from "../shared/ctdp";
-import type { Device } from "./store";
+} from "../ctdp";
+import type { Device } from "./device";
+import { Emitter } from "./emitter";
 
-interface EngineEvents {
+export interface EngineEvents {
   /** The shared state changed. */
   state: [CtdpState];
   device: [DeviceSettings];
@@ -35,12 +35,12 @@ export interface Persist {
 }
 
 /**
- * Owns the state in the main process so timers keep running with all windows
- * closed. Every effective action is appended to the log; the state is always
+ * Owns the state: in Electron's main process so timers keep running with all
+ * windows closed, or in the page on the phone. Every effective action is appended to the log; the state is always
  * the replay of that log.
  */
-export class Engine extends EventEmitter<EngineEvents> {
-  private timer: NodeJS.Timeout | null = null;
+export class Engine extends Emitter<EngineEvents> {
+  private timer: ReturnType<typeof setInterval> | null = null;
   private state: CtdpState;
   private overruled: LogEntry[];
 

@@ -1,6 +1,6 @@
 import { BrowserWindow, dialog, ipcMain, shell } from "electron";
 import { IPC, type DataResult } from "../shared/ipc";
-import type { Engine } from "./engine";
+import type { Engine } from "../shared/runtime";
 import { backupData, dataFile, readDataFile, saveData } from "./store";
 
 const filters = [{ name: "CTDP data", extensions: ["json"] }];

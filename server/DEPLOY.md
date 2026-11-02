@@ -1,6 +1,6 @@
 # 同步服务器部署
 
-把 `server/` 部署到自己的 VPS：Node 服务只监听本机 `127.0.0.1:8787`，由 Caddy 对外提供 HTTPS（自动申请和续期 Let's Encrypt 证书）。
+把 `server/` 部署到自己的 VPS：Node 服务只监听本机 `127.0.0.1:8787`，由 Caddy 对外提供 HTTPS（自动申请和续期 Let's Encrypt 证书）。同一个服务还托管手机端网页程序：手机打开 `https://你的子域名/` 就是手机端。
 
 ```
 手机 / 电脑 ──HTTPS──> Caddy (:443) ──> ctdp-sync (127.0.0.1:8787) ──> /var/lib/ctdp-sync/ctdp.db
@@ -27,12 +27,21 @@ command -v node  # 记下路径，systemd 配置要用
 
 ```bash
 git clone <你的仓库地址> /opt/ctdp
+
+# 同步服务器
 cd /opt/ctdp/server
 npm ci
-npm run build    # 生成 dist/server.js
+npm run build    # 生成 server/dist/server.js
+
+# 手机端网页程序（和桌面端共用界面代码，所以在根目录构建）
+cd /opt/ctdp
+ELECTRON_SKIP_BINARY_DOWNLOAD=1 npm ci
+npm run build:web    # 生成 dist/web/
 ```
 
-只需要在 `server/` 里安装，不用装根目录（那是桌面端，会下载 Electron）。
+- 根目录是桌面端的依赖。`ELECTRON_SKIP_BINARY_DOWNLOAD=1` 跳过 Electron 本体（约 100 MB）的下载，VPS 上用不到它。
+- 服务启动时会在 `/opt/ctdp/dist/web` 找网页程序。放在别处时，在 `/etc/ctdp-sync.env` 里加 `STATIC_DIR=绝对路径`。
+- 没有构建网页程序也能运行，只是手机打不开页面，日志里会提示 `no phone web app at ...`。
 
 ## 4. 用户、数据目录、配置
 
@@ -66,7 +75,7 @@ nano /etc/systemd/system/ctdp-sync.service
 systemctl daemon-reload
 systemctl enable --now ctdp-sync
 systemctl status ctdp-sync      # 应看到 active (running)
-journalctl -u ctdp-sync -n 20   # 应看到 "ctdp sync server on http://127.0.0.1:8787"
+journalctl -u ctdp-sync -n 20   # 应看到 "ctdp sync server on http://127.0.0.1:8787" 和 "phone web app from /opt/ctdp/dist/web"
 ```
 
 本机检查：
@@ -90,6 +99,7 @@ journalctl -u caddy -n 30        # 看证书是否申请成功
 
 ```bash
 curl https://your-subdomain.example.org/api/health   # {"ok":true}
+curl -I https://your-subdomain.example.org/          # 200，content-type: text/html
 ```
 
 ## 7. 连接设备
@@ -100,7 +110,15 @@ curl https://your-subdomain.example.org/api/health   # {"ok":true}
 
 第一台连接的设备会把自己的数据传到服务器。之后连接的设备如果已有不同的数据，会先询问，确认后改用服务器的数据，旧数据备份在本机数据文件旁边。
 
-**手机端**：网页程序在下一阶段完成，届时补充步骤。
+**手机端（iPhone，iOS 16.4 以上）**：
+1. 用 **Safari** 打开 `https://your-subdomain.example.org/`。
+2. 点分享按钮 → **添加到主屏幕**，以后从主屏幕的 CTDP 图标打开。**推送只在从主屏幕打开时可用**，在 Safari 标签页里不行。
+3. 第一次打开时只需要输入令牌（地址就是当前网页）。手机会直接使用服务器上的数据。
+4. 要收提醒：Settings → This device → **Turn on notifications**，允许通知，再点 **Send a test** 确认能收到。这个开关只管这部手机，电脑端的通知在电脑的 Settings 里单独开关。
+
+服务器推送三种提醒：预约还剩 2 分钟、预约到期、落座到达最小时长。
+
+手机端的数据存在 Safari 的网页存储里。打开过一次以后，没网也能打开和操作，联网后自动同步。iOS 可能清理长期不用的网页数据，这时重新输入令牌，数据会从服务器取回（还没同步上去的操作会丢失）。
 
 ## 日常维护
 
@@ -109,6 +127,7 @@ curl https://your-subdomain.example.org/api/health   # {"ok":true}
 ```bash
 cd /opt/ctdp && git pull
 cd server && npm ci && npm run build
+cd .. && ELECTRON_SKIP_BINARY_DOWNLOAD=1 npm ci && npm run build:web
 systemctl restart ctdp-sync
 ```
 
@@ -155,4 +174,8 @@ certbot --nginx -d your-subdomain.example.org
 | 电脑端 “Cannot reach the server” | `curl https://子域名/api/health`；DNS、443 端口、Caddy 日志 |
 | “Wrong token” | 设备上输入的令牌和 `/etc/ctdp-sync.env` 是否一致（注意首尾空格） |
 | “The server has no data any more” | 服务器被清空过：Disconnect 后重新 Connect |
+| 手机打开是 `{"error":"not found"}` | 网页程序没构建：在 `/opt/ctdp` 执行 `npm run build:web`，或检查 `STATIC_DIR` |
+| 手机上没有 “Turn on notifications” 按钮，提示要先添加到主屏幕 | 从主屏幕图标打开，不要在 Safari 里打开；iOS 需要 16.4 以上 |
+| 打开了通知但收不到 | 先点 Send a test；查 `journalctl -u ctdp-sync` 里有没有 `push to ... failed`；`VAPID_SUBJECT` 不能是默认值 |
+| 手机上的页面没更新 | 有网时打开总会取最新版本；从后台划掉 CTDP 再打开一次 |
 | 服务起不来 | `journalctl -u ctdp-sync -n 50`；Node 版本是否 ≥ 22.13；`CTDP_TOKEN` 是否至少 16 个字符 |

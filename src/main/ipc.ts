@@ -1,7 +1,7 @@
 import { BrowserWindow, ipcMain } from "electron";
 import { isAction } from "../shared/ctdp";
 import { IPC } from "../shared/ipc";
-import type { Engine } from "./engine";
+import type { Engine } from "../shared/runtime";
 
 export function registerIpc(engine: Engine, handlers: { openMain(): void; hideMini(): void }): void {
   ipcMain.handle(IPC.getState, () => engine.get());

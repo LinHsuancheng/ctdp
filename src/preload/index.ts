@@ -4,6 +4,7 @@ import type { CtdpState } from "../shared/ctdp/types";
 import { IPC, type CtdpApi, type SyncView } from "../shared/ipc";
 
 const api: CtdpApi = {
+  platform: "desktop",
   getState: () => ipcRenderer.invoke(IPC.getState),
   dispatch: (action) => ipcRenderer.invoke(IPC.dispatch, action),
   onState: (listener) => {

@@ -8,11 +8,12 @@
   "scripts": {
     "build:main": "node scripts/build-main.mjs",
     "build:renderer": "vite build",
+    "build:web": "vite build --config vite.web.config.ts",
     "build": "npm run build:main && npm run build:renderer",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "start": "npm run build && electron .",
-    "smoke": "npm run build && npm run build:server && bash scripts/smoke.sh",
+    "smoke": "npm run build && npm run build:web && npm run build:server && bash scripts/smoke.sh",
     "icons": "python3 scripts/make-icons.py",
     "dist:win": "npm run build && electron-builder --win zip --x64",
     "build:server": "npm --prefix server run build"

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LEVEL_NAMES, levelMark, type Chain, type CtdpState } from "../../../shared/ctdp";
-import { dispatch, useSettings } from "../hooks/useCtdp";
+import { dispatch, hasShortcuts, useSettings } from "../hooks/useCtdp";
 
 const ADHOC = "";
 
@@ -59,7 +59,7 @@ export function StartForm({ state, chain }: { state: CtdpState; chain: Chain }) 
       )}
       <button className="primary" onClick={sit}>
         Sit down
-        {isPrimary && <span className="kbd">{settings.startShortcut}</span>}
+        {isPrimary && hasShortcuts() && <span className="kbd">{settings.startShortcut}</span>}
       </button>
     </section>
   );

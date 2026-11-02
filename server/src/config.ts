@@ -1,9 +1,11 @@
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 export interface Config {
   host: string;
   port: number;
   dataDir: string;
+  /** The built phone web app (`npm run build:web` at the repository root). */
+  staticDir: string;
   /** Shared secret every device sends as a bearer token. */
   token: string;
   /** Contact for push services: mailto: or https: URL. */
@@ -20,6 +22,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     host: env.HOST ?? "127.0.0.1",
     port,
     dataDir: resolve(env.CTDP_DATA_DIR ?? "data"),
+    // The bundle runs from server/dist, so the default is <repo>/dist/web.
+    staticDir: resolve(env.STATIC_DIR ?? join(__dirname, "../../dist/web")),
     token,
     vapidSubject: env.VAPID_SUBJECT ?? "mailto:ctdp@localhost",
   };
