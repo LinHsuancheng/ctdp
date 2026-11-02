@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
 import type { DeviceSettings } from "../shared/ctdp/device";
 import type { CtdpState } from "../shared/ctdp/types";
-import { IPC, type CtdpApi, type SyncView } from "../shared/ipc";
+import { IPC, type CtdpApi, type Intent, type SyncView } from "../shared/ipc";
 
 const api: CtdpApi = {
   platform: "desktop",
@@ -19,8 +19,16 @@ const api: CtdpApi = {
     ipcRenderer.on(IPC.settings, handler);
     return () => ipcRenderer.removeListener(IPC.settings, handler);
   },
-  openMain: () => ipcRenderer.send(IPC.openMain),
+  openMain: (intent) => ipcRenderer.send(IPC.openMain, intent ?? null),
+  hideMain: () => ipcRenderer.send(IPC.hideMain),
   hideMini: () => ipcRenderer.send(IPC.hideMini),
+  onIntent: (listener) => {
+    const handler = (_e: IpcRendererEvent, intent: Intent) => listener(intent);
+    ipcRenderer.on(IPC.intent, handler);
+    return () => ipcRenderer.removeListener(IPC.intent, handler);
+  },
+  shortcutStatus: () => ipcRenderer.invoke(IPC.shortcutStatus),
+  testShortcut: (accelerator) => ipcRenderer.invoke(IPC.testShortcut, accelerator),
   dataFile: () => ipcRenderer.invoke(IPC.dataFile),
   revealData: () => ipcRenderer.send(IPC.revealData),
   exportData: () => ipcRenderer.invoke(IPC.exportData),

@@ -1,0 +1,224 @@
+/* Shared components on top of the tokens: buttons, cards, dialogs, the dimmed prompt, hold-to-confirm. */
+
+.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.secondary {
+  background: var(--surface);
+  border-color: var(--border-strong);
+}
+.ghost {
+  background: none;
+  border-color: transparent;
+  color: var(--muted);
+}
+.ghost:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: transparent;
+}
+.danger,
+.ghost.danger {
+  color: var(--danger);
+}
+button.danger:not(.ghost) {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+.small {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+.card.accent {
+  border-color: var(--border);
+}
+.card h2 {
+  font-size: 19px;
+}
+
+/* Dialogs */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 18, 15, 0.38);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 50;
+  animation: fade 0.15s ease-out;
+}
+.dialog {
+  width: min(480px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-lg);
+  padding: 26px;
+  display: grid;
+  gap: 14px;
+  animation: rise 0.18s ease-out;
+}
+.dialog h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.dialog .row {
+  justify-content: flex-end;
+}
+
+/* The dimmed prompt: the whole window goes dark and shows one requirement. */
+.dim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--dim);
+  color: #f6f3ea;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  animation: fade 0.35s ease-out;
+}
+.dim-inner {
+  max-width: 520px;
+  text-align: center;
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+}
+.dim-kicker {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(246, 243, 234, 0.6);
+}
+.dim-text {
+  font-family: var(--serif);
+  font-size: clamp(26px, 6vw, 40px);
+  line-height: 1.25;
+  margin: 0;
+}
+.dim-sub {
+  color: rgba(246, 243, 234, 0.7);
+  margin: 0;
+}
+.dim-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+.dim .primary {
+  padding: 12px 28px;
+  font-size: 16px;
+  border-radius: 999px;
+}
+.dim .ghost {
+  color: rgba(246, 243, 234, 0.7);
+  border-radius: 999px;
+}
+.dim .ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* Hold to confirm: fills while pressed, fires when full. */
+.hold {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+}
+.hold-fill {
+  position: absolute;
+  inset: 0;
+  width: 0;
+  background: var(--danger-soft);
+  pointer-events: none;
+}
+.hold.holding .hold-fill {
+  width: 100%;
+  transition: width var(--hold-ms, 2000ms) linear;
+}
+.hold-label {
+  position: relative;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 18px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-lg);
+  z-index: 70;
+  animation: toast-in 0.2s ease-out;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
+
+.disclosure {
+  border-top: 1px solid var(--border);
+  padding-top: 4px;
+}
+.disclosure > summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.disclosure > summary::before {
+  content: "›";
+  display: inline-block;
+  transition: transform 0.15s;
+}
+.disclosure[open] > summary::before {
+  transform: rotate(90deg);
+}
+.disclosure-body {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 8px;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

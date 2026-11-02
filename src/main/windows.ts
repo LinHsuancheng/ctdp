@@ -16,14 +16,15 @@ function lockDown(win: BrowserWindow): void {
 
 export function createMainWindow(): BrowserWindow {
   const win = new BrowserWindow({
-    width: 780,
-    height: 700,
-    minWidth: 560,
-    minHeight: 540,
+    width: 600,
+    height: 720,
+    minWidth: 420,
+    minHeight: 560,
     show: false,
     title: "CTDP",
     icon: iconPath(),
     autoHideMenuBar: true,
+    backgroundColor: "#faf9f5",
     webPreferences: webPreferences(),
   });
   lockDown(win);
@@ -32,7 +33,7 @@ export function createMainWindow(): BrowserWindow {
   return win;
 }
 
-const MINI = { width: 264, height: 108, margin: 16 };
+const MINI = { width: 300, height: 128, margin: 16 };
 
 /** Small always-on-top countdown shown while reserved or focusing. */
 export function createMiniWindow(): BrowserWindow {
@@ -49,6 +50,8 @@ export function createMiniWindow(): BrowserWindow {
     fullscreenable: false,
     skipTaskbar: true,
     alwaysOnTop: true,
+    transparent: true,
+    hasShadow: false,
     show: false,
     webPreferences: webPreferences(),
   });

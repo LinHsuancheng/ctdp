@@ -4,8 +4,6 @@ import { trayIconPath } from "./paths";
 
 interface TrayActions {
   showMain(): void;
-  reserve(): void;
-  quickStart(): void;
   quit(): void;
 }
 
@@ -30,14 +28,10 @@ export class TrayController {
 
   update(state: CtdpState): void {
     const line = status(state);
-    const hasPrimary = Boolean(primaryChain(state));
     this.tray.setToolTip(`CTDP\n${line}`);
     this.tray.setContextMenu(
       Menu.buildFromTemplate([
         { label: line, enabled: false },
-        { type: "separator" },
-        { label: "Reserve (primary chain)", enabled: hasPrimary && !state.reservation, click: this.actions.reserve },
-        { label: "Sit down (primary chain)", enabled: hasPrimary && !state.seat, click: this.actions.quickStart },
         { type: "separator" },
         { label: "Open CTDP", click: this.actions.showMain },
         { label: "Quit", click: this.actions.quit },

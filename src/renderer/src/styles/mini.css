@@ -3,15 +3,17 @@ body,
 #root {
   height: 100%;
   overflow: hidden;
+  background: transparent;
 }
 
 .mini {
   height: 100%;
-  padding: 10px 12px;
+  padding: 12px 14px 12px;
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
-  gap: 4px;
+  grid-template-rows: auto 1fr auto;
+  gap: 6px;
   border: 1px solid var(--border);
+  border-radius: 14px;
   background: var(--surface);
   -webkit-app-region: drag;
   user-select: none;
@@ -29,25 +31,56 @@ body,
   color: var(--muted);
 }
 
+.mini-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mini-icons,
 .mini-actions {
   -webkit-app-region: no-drag;
   display: flex;
-  gap: 2px;
+  gap: 6px;
+  align-items: center;
 }
 
-.mini-actions button {
+.mini-icons button {
   padding: 0 6px;
+  border: 0;
   background: none;
-  color: var(--muted);
+  color: var(--faint);
   line-height: 18px;
 }
 
+.mini-icons button:hover {
+  color: var(--text);
+}
+
+.mini-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.mini-body > div:first-child {
+  min-width: 0;
+}
+
 .mini-time {
-  font-size: 30px;
-  font-weight: 600;
+  font-family: var(--serif);
+  font-size: 32px;
+  line-height: 1.05;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
-  align-self: center;
+}
+
+.mini-time.text {
+  font-size: 20px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .mini-caption {
@@ -56,4 +89,8 @@ body,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.mini-actions .small {
+  white-space: nowrap;
 }

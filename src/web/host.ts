@@ -97,7 +97,11 @@ export async function createWebHost(): Promise<CtdpApi> {
     updateSettings: async (patch) => engine.updateSettings(patch),
     onSettings: (l) => subscribe(settingsListeners, l),
     openMain: () => {},
+    hideMain: () => {},
     hideMini: () => {},
+    onIntent: () => () => {},
+    shortcutStatus: async () => null,
+    testShortcut: async (accelerator) => ({ accelerator, ok: false, message: "Shortcuts exist only in the desktop app." }),
     dataFile: async () => "In this browser on this phone",
     revealData: () => {},
     exportData: async (): Promise<DataResult> => {

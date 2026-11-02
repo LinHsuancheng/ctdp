@@ -1,30 +1,59 @@
+/*
+ * Design tokens and plain elements. Warm paper, one terracotta accent, serif
+ * headings, generous space; dark mode is warm charcoal.
+ */
 :root {
   color-scheme: light dark;
-  --bg: #f6f7f9;
+  --bg: #faf9f5;
   --surface: #ffffff;
-  --border: #e3e6eb;
-  --text: #1c2330;
-  --muted: #6b7484;
-  --accent: #2563eb;
-  --accent-soft: #e8efff;
-  --danger: #d63c3c;
-  --ok: #1f8a4c;
-  --radius: 10px;
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --surface-2: #f3f1ea;
+  --border: #e6e3d9;
+  --border-strong: #d4d0c3;
+  --text: #1f1e1c;
+  --muted: #76736a;
+  --faint: #a8a59b;
+  --accent: #c6613f;
+  --accent-hover: #b0532f;
+  --accent-soft: #f7e8e1;
+  --accent-text: #ffffff;
+  --danger: #b4423a;
+  --danger-soft: #f8e4e1;
+  --ok: #4f7a4c;
+  --ok-soft: #e6eedf;
+  --dim: rgba(20, 18, 15, 0.82);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow: 0 1px 2px rgba(31, 30, 28, 0.04), 0 6px 24px rgba(31, 30, 28, 0.06);
+  --shadow-lg: 0 2px 6px rgba(31, 30, 28, 0.06), 0 18px 48px rgba(31, 30, 28, 0.14);
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --mono: "Cascadia Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--sans);
   font-size: 14px;
+  line-height: 1.5;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #14171c;
-    --surface: #1c2027;
-    --border: #2c323c;
-    --text: #e6e9ee;
-    --muted: #9099a8;
-    --accent: #5b8cff;
-    --accent-soft: #1f2a44;
-    --danger: #ef6464;
-    --ok: #46c27f;
+    --bg: #262624;
+    --surface: #30302e;
+    --surface-2: #2b2b29;
+    --border: #3e3d39;
+    --border-strong: #55534d;
+    --text: #f2efe7;
+    --muted: #a6a298;
+    --faint: #75726a;
+    --accent: #d97757;
+    --accent-hover: #e38a6c;
+    --accent-soft: #3e2d26;
+    --accent-text: #1f1e1c;
+    --danger: #e07368;
+    --danger-soft: #42292a;
+    --ok: #93b98d;
+    --ok-soft: #2d3a2b;
+    --dim: rgba(10, 9, 8, 0.86);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 6px 24px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.3), 0 18px 48px rgba(0, 0, 0, 0.45);
   }
 }
 
@@ -37,45 +66,78 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 button {
   font: inherit;
   cursor: pointer;
-  border-radius: 8px;
-  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
   padding: 8px 14px;
   background: var(--surface);
   color: var(--text);
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    transform 0.05s;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 button:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 input,
-textarea {
+textarea,
+select {
   font: inherit;
   color: var(--text);
-  background: var(--bg);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
   width: 100%;
+}
+
+textarea {
+  resize: vertical;
 }
 
 input:focus,
 textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
 button:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .progress {
-  height: 6px;
-  border-radius: 3px;
-  background: var(--border);
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-2);
   overflow: hidden;
 }
 
@@ -83,14 +145,4 @@ button:focus-visible {
   height: 100%;
   background: var(--accent);
   transition: width 0.4s linear;
-}
-
-select {
-  font: inherit;
-  color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 10px;
-  width: 100%;
 }

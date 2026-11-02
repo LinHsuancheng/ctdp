@@ -10,7 +10,11 @@ export const IPC = {
   updateSettings: "ctdp:update-settings",
   settings: "ctdp:settings",
   openMain: "ctdp:open-main",
+  hideMain: "ctdp:hide-main",
   hideMini: "ctdp:hide-mini",
+  intent: "ctdp:intent",
+  shortcutStatus: "ctdp:shortcut-status",
+  testShortcut: "ctdp:test-shortcut",
   dataFile: "ctdp:data-file",
   revealData: "ctdp:reveal-data",
   exportData: "ctdp:export-data",
@@ -52,6 +56,18 @@ export interface PushStatus {
   message: string;
 }
 
+/**
+ * What the mini window asks the main window to do when it opens it:
+ * sit down (dimmed trigger), sign a finished unit, or confirm leaving.
+ */
+export type Intent = "action" | "sign" | "leave";
+
+export interface ShortcutStatus {
+  accelerator: string;
+  ok: boolean;
+  message: string;
+}
+
 export interface Outcome {
   ok: boolean;
   message: string;
@@ -80,8 +96,15 @@ export interface CtdpApi {
   getSettings(): Promise<DeviceSettings>;
   updateSettings(patch: Partial<DeviceSettings>): Promise<void>;
   onSettings(listener: (settings: DeviceSettings) => void): () => void;
-  openMain(): void;
+  /** Desktop only; no-ops on the web app. */
+  openMain(intent?: Intent): void;
+  hideMain(): void;
   hideMini(): void;
+  onIntent(listener: (intent: Intent) => void): () => void;
+  /** Whether the summon shortcut is registered; the web app has none. */
+  shortcutStatus(): Promise<ShortcutStatus | null>;
+  /** Checks whether an accelerator could be registered, without keeping it. */
+  testShortcut(accelerator: string): Promise<ShortcutStatus>;
   dataFile(): Promise<string>;
   revealData(): void;
   exportData(): Promise<DataResult>;

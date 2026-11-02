@@ -4,6 +4,8 @@ import { App } from "../renderer/src/App";
 import { useSync } from "../renderer/src/hooks/useCtdp";
 import "../renderer/src/styles/base.css";
 import "../renderer/src/styles/app.css";
+import "../renderer/src/styles/kit.css";
+import "../renderer/src/styles/home.css";
 import { ConnectScreen } from "./ConnectScreen";
 import { createWebHost } from "./host";
 

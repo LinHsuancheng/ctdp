@@ -34,7 +34,7 @@ export function PrecedentDialog({ title, intro, placeholder, precedents, breakLa
         </div>
       )}
       <div className="row">
-        <button className="danger" disabled={!text.trim() || Boolean(exact)} onClick={() => onJudge("break", text)}>
+        <button className="ghost danger" disabled={Boolean(exact)} onClick={() => onJudge("break", text)}>
           {breakLabel}
         </button>
         <button className="secondary" disabled={!text.trim()} onClick={() => onJudge("allow", text)}>

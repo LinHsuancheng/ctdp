@@ -1,10 +1,16 @@
 import type { BrowserWindow } from "electron";
 import type { CtdpState, DeviceSettings } from "../shared/ctdp";
 
-const activityKey = (s: CtdpState) =>
-  s.seat ? `s${s.seat.node.id}` : s.reservation ? `r${s.reservation.reservedAt}` : "idle";
+/** What the mini window is showing; a new activity shows it again after a dismissal. */
+export function activityKey(s: CtdpState): string {
+  if (s.seat) return `s${s.seat.node.id}`;
+  if (s.reservation) return `r${s.reservation.reservedAt}`;
+  // Between the units of a chunk in progress: the next unit waits.
+  const open = s.chains.find((c) => c.main.open);
+  return open ? `o${open.id}:${open.main.counters[0].current}` : "idle";
+}
 
-/** Shows the mini window while seated or reserved, unless the user dismissed that one. */
+/** Shows the mini window while reserved, seated, or between units, unless the user dismissed that one. */
 export class MiniController {
   private dismissed: string | null = null;
   private current = "idle";

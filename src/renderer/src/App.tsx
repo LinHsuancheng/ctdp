@@ -1,16 +1,14 @@
 import { useState } from "react";
-import { ChainHeader } from "./components/ChainHeader";
 import { VoidedBanner } from "./components/VoidedBanner";
+import { Home } from "./home/Home";
 import { SettingsContext, useCtdpState, useDeviceSettings, useSync } from "./hooks/useCtdp";
 import { ChainsPage } from "./pages/ChainsPage";
 import { ChunksPage } from "./pages/ChunksPage";
-import { FocusPage } from "./pages/FocusPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { PrecedentsPage } from "./pages/PrecedentsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
-const TABS = [
-  { key: "focus", label: "Focus" },
+const MORE = [
   { key: "chains", label: "Chains" },
   { key: "chunks", label: "Chunks" },
   { key: "precedents", label: "Precedents" },
@@ -18,36 +16,54 @@ const TABS = [
   { key: "settings", label: "Settings" },
 ] as const;
 
-type TabKey = (typeof TABS)[number]["key"];
+type MoreKey = (typeof MORE)[number]["key"];
+type View = "home" | MoreKey;
+
+const isMore = (v: string | undefined): v is MoreKey => MORE.some((t) => t.key === v);
 
 export function App() {
   const state = useCtdpState();
   const settings = useDeviceSettings();
   const sync = useSync();
-  const [tab, setTab] = useState<TabKey>("focus");
+  const [view, setView] = useState<View>("home");
   if (!state || !settings || !sync) return <div className="loading">Loading…</div>;
 
   return (
     <SettingsContext.Provider value={settings}>
-    <div className="app">
-      <ChainHeader state={state} />
-      <VoidedBanner view={sync} />
-      <nav className="tabs" role="tablist">
-        {TABS.map((t) => (
-          <button key={t.key} role="tab" aria-selected={tab === t.key} className={tab === t.key ? "tab active" : "tab"} onClick={() => setTab(t.key)}>
-            {t.label}
-          </button>
-        ))}
-      </nav>
-      <main className="page">
-        {tab === "focus" && <FocusPage state={state} />}
-        {tab === "chains" && <ChainsPage state={state} />}
-        {tab === "chunks" && <ChunksPage state={state} />}
-        {tab === "precedents" && <PrecedentsPage state={state} />}
-        {tab === "history" && <HistoryPage state={state} sync={sync} />}
-        {tab === "settings" && <SettingsPage state={state} sync={sync} />}
-      </main>
-    </div>
+      <div className={view === "home" ? "app app-home" : "app"}>
+        <header className="topbar">
+          {view === "home" ? (
+            <>
+              <span className="brand">CTDP</span>
+              <button className="ghost small" onClick={() => setView("chains")}>
+                More
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="ghost small back" onClick={() => setView("home")}>
+                ‹ Back
+              </button>
+              <nav className="tabs" role="tablist">
+                {MORE.map((t) => (
+                  <button key={t.key} role="tab" aria-selected={view === t.key} className={view === t.key ? "tab active" : "tab"} onClick={() => setView(t.key)}>
+                    {t.label}
+                  </button>
+                ))}
+              </nav>
+            </>
+          )}
+        </header>
+        <VoidedBanner view={sync} />
+        <main className={view === "home" ? "home" : "page"}>
+          {view === "home" && <Home state={state} onMore={(tab) => setView(isMore(tab) ? tab : "chains")} />}
+          {view === "chains" && <ChainsPage state={state} />}
+          {view === "chunks" && <ChunksPage state={state} />}
+          {view === "precedents" && <PrecedentsPage state={state} />}
+          {view === "history" && <HistoryPage state={state} sync={sync} />}
+          {view === "settings" && <SettingsPage state={state} sync={sync} />}
+        </main>
+      </div>
     </SettingsContext.Provider>
   );
 }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { levelMark, type CtdpState, type DeviceSettings } from "../../../shared/ctdp";
+import type { CtdpState } from "../../../shared/ctdp";
 import type { DataResult, SyncView } from "../../../shared/ipc";
 import { PhoneNotifications } from "../components/PhoneNotifications";
+import { ShortcutRecorder } from "../components/ShortcutRecorder";
 import { SyncSection } from "../components/SyncSection";
 import { dispatch, useSettings } from "../hooks/useCtdp";
 
@@ -77,55 +78,23 @@ function DataSection() {
   );
 }
 
-/** Shortcuts, mini window and local notifications of a computer. */
-function DesktopSettings({ state }: { state: CtdpState }) {
-  const [draft, setDraft] = useState<DeviceSettings>(useSettings());
-  const [saved, setSaved] = useState(false);
-  const set = <K extends keyof DeviceSettings>(key: K, value: DeviceSettings[K]) => {
-    setDraft((d) => ({ ...d, [key]: value }));
-    setSaved(false);
-  };
-
+/** Shortcut, mini window and local notifications of a computer. */
+function DesktopSettings() {
+  const settings = useSettings();
+  const toggle = (key: "showMiniWindow" | "notifications") => void window.ctdp.updateSettings({ [key]: !settings[key] });
   return (
     <section className="card">
-      <h2>This device</h2>
-      <p className="hint">These preferences stay on this computer and are not shared with your other devices.</p>
-      <div className="grid2">
-        <label className="field">
-          <span>Reserve shortcut (primary chain)</span>
-          <input value={draft.reserveShortcut} onChange={(e) => set("reserveShortcut", e.target.value)} />
-        </label>
-        <label className="field">
-          <span>Sit-down shortcut (primary chain)</span>
-          <input value={draft.startShortcut} onChange={(e) => set("startShortcut", e.target.value)} />
-        </label>
-      </div>
-      <p className="hint">Format like CommandOrControl+Alt+R. A shortcut taken by another app will not work.</p>
-      <label className="field">
-        <span>Chunk the sit-down shortcut starts</span>
-        <select value={draft.quickStartChunkId ?? ""} onChange={(e) => set("quickStartChunkId", e.target.value || null)}>
-          <option value="">Ad-hoc 60-minute unit</option>
-          {state.chunks.map((c) => (
-            <option key={c.id} value={c.id}>
-              {levelMark(c.level)} {c.name}
-            </option>
-          ))}
-        </select>
+      <h2>This computer</h2>
+      <ShortcutRecorder value={settings.summonShortcut} />
+      <label className="check">
+        <input type="checkbox" checked={settings.showMiniWindow} onChange={() => toggle("showMiniWindow")} />
+        Corner card while reserved or seated (the main window steps aside)
       </label>
       <label className="check">
-        <input type="checkbox" checked={draft.showMiniWindow} onChange={(e) => set("showMiniWindow", e.target.checked)} />
-        Show the always-on-top mini window while seated or reserved
+        <input type="checkbox" checked={settings.notifications} onChange={() => toggle("notifications")} />
+        Show notifications on this computer
       </label>
-      <label className="check">
-        <input type="checkbox" checked={draft.notifications} onChange={(e) => set("notifications", e.target.checked)} />
-        Show notifications on this device
-      </label>
-      <div className="row">
-        <button className="primary" onClick={() => void window.ctdp.updateSettings(draft).then(() => setSaved(true))}>
-          Save
-        </button>
-        {saved && <span className="notice ok inline">Saved</span>}
-      </div>
+      <p className="hint">These stay on this computer and are not shared with your other devices.</p>
     </section>
   );
 }
@@ -134,7 +103,7 @@ export function SettingsPage({ state, sync }: { state: CtdpState; sync: SyncView
   const push = window.ctdp.push;
   return (
     <>
-      {push ? <PhoneNotifications push={push} /> : <DesktopSettings state={state} />}
+      {push ? <PhoneNotifications push={push} /> : <DesktopSettings />}
       <SyncSection view={sync} />
       <Categories state={state} />
       <DataSection />
